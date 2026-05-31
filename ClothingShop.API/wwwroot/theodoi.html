@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Theo dõi đơn hàng</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="theodoi.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+
+    <div class="logo">
+        <a href="index.html" id="name"> Clothing</a>
+        <span> |</span> <a href="#" id="td">Theo dõi đơn hàng</a>
+    </div>
+
+    <div class="tracking-container">
+        <div class="tracking-header">
+            <div class="header-left">
+                Mã đơn hàng: <span id="order-id"></span> | <span id="status-text" class="status-highlight"></span>
+            </div>
+            <div class="header-right">
+                Ngày nhận hàng dự kiến: <span id="expected-date"></span>
+            </div>
+        </div>
+        <hr>
+
+        <div class="progress-track" id="progress-track"></div>
+
+        <hr>
+        <div class="order-details-section">
+            <div class="shipping-address">
+                <h3><i class="fa-solid fa-location-dot"></i> ĐỊA CHỈ NHẬN HÀNG</h3>
+                <div class="address-content" id="address-info">
+                </div>
+            </div>
+
+            <div class="product-list-detail">
+                <h3><i class="fa-solid fa-box"></i> CHI TIẾT SẢN PHẨM</h3>
+                <div id="product-items-container">
+                </div>
+            </div>
+
+            <div class="order-summary" id="order-summary-price">
+            </div>
+        </div>
+
+        <div class="action-group" id="action-buttons">
+        </div>
+    </div>
+
+
+    <!--Footer-->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h1 class="footer-logo">Clothing</h1>
+                <p class="footer-slogan">Shop áo quần online</p>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Giới thiệu</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Liên hệ</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hướng dẫn</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hỗ trợ khách hàng</a></li>
+                </ul>
+                <div class="footer-socials">
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="theodoi.js"></script>
+</body>
+</html>

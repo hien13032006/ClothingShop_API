@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Thanh toán</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="checkout.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+
+    <div class="logo">
+        <a href="index.html" id="name"> Clothing</a>
+        <span> |</span> <a href="#" id="tt">Thanh toán</a>
+    </div>
+
+    <main class="checkout-container">
+        <section class="checkout-card address-section">
+            <div class="section-title"><i class="fa-solid fa-location-dot"></i> Địa chỉ nhận hàng</div>
+            <div id="address-display" class="address-content">
+            </div>
+        </section>
+
+        <section class="checkout-card product-section">
+            <div class="product-header">
+                <div class="col-main">Sản phẩm</div>
+                <div class="col-type">Phân loại</div>
+                <div class="col-price">Đơn giá</div>
+                <div class="col-qty">Số lượng</div>
+                <div class="col-total">Thành tiền</div>
+            </div>
+            <div id="checkout-product-list">
+            </div>
+        </section>
+
+        <section class="checkout-card extra-info-block" id="extra-info-container">
+            <div class="info-row">
+                <span class="info-label">Voucher</span>
+                <span id="display-voucher-discount">-0đ</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Lời nhắn cho shop</span>
+                <span class="text-link" style="color:#008080; cursor:pointer;">
+                    Để lại lời nhắn <i class="fa-solid fa-chevron-right"></i>
+                </span>
+            </div>
+
+            <div class="info-row">
+                <div class="shipping-left">
+                    <span class="info-label">Phương thức vận chuyển</span>
+                    <div style="font-size:14px; margin-top:5px;">
+                        <span id="ship-method-name"></span>
+                        <i class="fa-solid fa-truck" style="color:#2ecc71;"></i><br>
+                        <small id="ship-estimate-info" style="color:#666;"></small>
+                    </div>
+                </div>
+                <div class="shipping-right" style="text-align:right;">
+                    <span class="text-link" style="color:#008080; font-size:13px; cursor:pointer;">
+                        Xem tất cả <i class="fa-solid fa-chevron-right"></i>
+                    </span><br>
+                    <span id="display-ship-fee" style="color:#ff6b81; font-weight:bold; font-size: 1.1em;">0đ</span>
+                </div>
+            </div>
+
+            <hr class="dashed-line">
+
+            <div class="info-row" style="padding-top: 10px;">
+                <span class="info-label" id="label-total-quantity">Tổng số tiền (0 sản phẩm):</span>
+                <span id="subtotal-items-price" style="color:#ff6b81; font-weight:bold; font-size: 1.2em;">0đ</span>
+            </div>
+        </section>
+
+        <section class="checkout-card final-section">
+            <div id="payment-method-container">
+            </div>
+
+            <div class="price-summary">
+                <div class="summary-line"><span>Tổng tiền hàng:</span> <span id="total-items-price">0đ</span></div>
+                <div class="summary-line"><span>Phí vận chuyển:</span> <span id="display-shipping-fee">20.000đ</span></div>
+                <div class="summary-line"><span>Giảm giá phí vận chuyển:</span> <span id="vouchership-discount">-0đ</span></div>
+                <div class="summary-line"><span>Tổng thanh toán:</span> <span class="grand-total" id="final-total">0đ</span></div>
+
+                <div class="grand-total-action">
+                    <div class="total-label-group">
+                        <span>Tổng cộng:</span>
+                        <span class="total-amount-red" id="final-total-red">0đ</span>
+                    </div>
+                    <button class="btn-order" onclick="placeOrder()">Đặt hàng</button>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <div id="custom-alert" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <h3 id="modal-title">Thông báo</h3>
+            <p id="modal-message"></p>
+            <div class="modal-actions" style="margin-top: 25px; display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-cancel" onclick="closeCheckoutModal()">Hủy</button>
+                <button class="btn-confirm">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <!--Footer-->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h1 class="footer-logo">Clothing</h1>
+                <p class="footer-slogan">Shop áo quần online</p>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Giới thiệu</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Liên hệ</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hướng dẫn</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hỗ trợ khách hàng</a></li>
+                </ul>
+                <div class="footer-socials">
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="checkout.js"></script>
+
+</body>
+        </html >

@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ của tôi - Clothing</title>
+    <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <div class="profile-wrapper">
+        <header class="profile-header">
+            <a href="index.html" class="logo-link">
+                <span class="brand-name">Clothing</span>
+            </a>
+            <span class="page-sub-title">Quản lý tài khoản</span>
+        </header>
+
+        <main class="profile-content">
+            <div class="profile-sidebar">
+                <div class="avatar-placeholder">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            </div>
+
+            <section class="profile-main">
+                <h2>Hồ sơ của tôi</h2>
+                <form id="profile-form">
+                    <div class="form-row">
+                        <label>Tên đăng nhập</label>
+                        <input type="text" id="username" placeholder="Nhập tên đăng nhập">
+                    </div>
+
+                    <div class="form-row">
+                        <label>Tên</label>
+                        <input type="text" id="fullname" placeholder="Nhập tên">
+                    </div>
+
+                    <div class="form-row">
+                        <label>Mật khẩu</label>
+                        <span class="info-static"></span>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Email</label>
+                        <span class="action-link">Thêm</span>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Số điện thoại</label>
+                        <span class="info-static"></span>
+                        <span class="action-link" style="margin-left: 10px;">Thay đổi</span>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Giới tính</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="gender" value="nam"> Nam</label>
+                            <label><input type="radio" name="gender" value="nu"> Nữ</label>
+                            <label><input type="radio" name="gender" value="khac"> Khác</label>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Ngày sinh</label>
+                        <div class="date-selectors">
+                            <select id="dob-day"><option>Ngày</option></select>
+                            <select id="dob-month"><option>Tháng</option></select>
+                            <select id="dob-year"><option>Năm</option></select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-save">Lưu</button>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!--Footer-->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h1 class="footer-logo">Clothing</h1>
+                <p class="footer-slogan">Shop áo quần online</p>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Giới thiệu</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Liên hệ</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hướng dẫn</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hỗ trợ khách hàng</a></li>
+                </ul>
+                <div class="footer-socials">
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+<scrip> src="profile.js"</scrip>
+</html>

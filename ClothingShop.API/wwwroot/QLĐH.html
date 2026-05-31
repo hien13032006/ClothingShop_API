@@ -1,0 +1,102 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Quản lý đơn hàng</title>
+    <link rel="stylesheet" href="QLĐH.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+
+    <div class="admin-container">
+        <div class="logo">
+            <a href="index.html" id="name"> Clothing</a>
+            <span> |</span> <a href="#" id="qldh">Quản lý đơn hàng</a>
+        </div>
+
+        <div class="search-bar-container">
+            <div class="search-input-group">
+                <input type="text" id="order-search" placeholder="Tìm kiếm đơn hàng...">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            </div>
+            <button class="btn-search-main" onclick="handleFilter()">Tìm</button>
+        </div>
+
+        <div class="filter-group">
+            <div class="date-range-picker">
+                <span class="filter-label">Từ ngày:</span>
+                <input type="date" id="start-date" class="date-input">
+                <span class="filter-label">Đến:</span>
+                <input type="date" id="end-date" class="date-input">
+            </div>
+            <button class="btn-primary" onclick="handleFilter()"><i class="fa-solid fa-filter"></i> Lọc</button>
+            <button class="btn-secondary" onclick="resetFilter()"><i class="fa-solid fa-rotate-right"></i> Làm mới</button>
+        </div>
+
+        <h2 class="section-title">Danh sách đơn hàng</h2>
+
+        <div class="order-tabs">
+            <button class="tab-item active" onclick="filterByStatus('all')">Tất cả</button>
+            <button class="tab-item" onclick="filterByStatus('new')">Đơn hàng mới</button>
+            <button class="tab-item" onclick="filterByStatus('preparing')">Đang chuẩn bị</button>
+            <button class="tab-item" onclick="filterByStatus('shipping')">Đang vận chuyển</button>
+            <button class="tab-item" onclick="filterByStatus('completed')">Đã hoàn thành</button>
+            <button class="tab-item" onclick="filterByStatus('cancelled')">Đã hủy</button>
+        </div>
+
+        
+        <div class="table-card">
+            <div class="table-wrapper">
+                <table class="order-table">
+                    <thead>
+                        <tr>
+                            <th>MÃ ĐƠN</th>
+                            <th>NGÀY ĐẶT</th>
+                            <th>KHÁCH HÀNG</th>
+                            <th>THÀNH TIỀN</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-list">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!--Footer-->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h1 class="footer-logo">Clothing</h1>
+                <p class="footer-slogan">Shop áo quần online</p>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Giới thiệu</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Liên hệ</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hướng dẫn</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hỗ trợ khách hàng</a></li>
+                </ul>
+                <div class="footer-socials">
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="QLĐH.js"></script>
+
+</body>
+</html>

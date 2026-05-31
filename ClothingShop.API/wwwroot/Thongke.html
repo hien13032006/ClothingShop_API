@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thống kê báo cáo</title>
+    <link rel="stylesheet" href="Thongke.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-logo">Admin Panel</div>
+            <ul>
+                <li class="active"><a href="#"><i class="fa-solid fa-chart-line"></i> Thống kê</a></li>
+                <li><a href="#"><i class="fa-solid fa-box"></i> Quản lý đơn hàng</a></li>
+                <li><a href="#"><i class="fa-solid fa-shirt"></i> Quản lý sản phẩm</a></li>
+                <li><a href="#"><i class="fa-solid fa-users"></i> Khách hàng</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h2>Tổng quan hệ thống</h2>
+                <div class="user-info">Admin: <strong id="admin-name"></strong></div>
+            </header>
+
+            <div class="stats-grid" id="stats-container">
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3>Doanh thu theo tháng</h3>
+                    <canvas id="revenueChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Cơ cấu sản phẩm bán chạy</h3>
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="Thongke.js"></script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+using ClothingShop.Data;
+using ClothingShop.Data.Interfaces;
+using ClothingShop.Data.Repositories;
+using ClothingShop.Models; 
+using ClothingShop.Models.DTOs;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace ClothingShop.Business.Services
+{
+    public interface IProductService
+    {
+        Task<ApiResponse<PagedResult<ProductSummaryDto>>> GetProductsAsync(ProductFilterDto filter, string? userId = null);
+        Task<ApiResponse<ProductDetailDto>> GetProductDetailAsync(int productId, string? userId = null);
+        Task<ApiResponse<ProductDetailDto>> CreateProductAsync(CreateProductDto dto);
+        Task<ApiResponse<ProductDetailDto>> UpdateProductAsync(int productId, UpdateProductDto dto);
+        Task<ApiResponse<List<ProductSummaryDto>>> GetBestSellersAsync(int limit, string? userId = null);
+        Task<ApiResponse<List<ProductSummaryDto>>> GetNewArrivalsAsync(int limit, string? userId = null);
+        Task<ApiResponse<List<ProductSummaryDto>>> GetDiscountProductsAsync(int limit, string? userId = null);
+        Task<ApiResponse<string>> DeleteProductAsync(int productId);
+        Task<ApiResponse<List<CategoryDto>>> GetCategoriesAsync();
+        Task<ApiResponse<CategoryDto>> CreateCategoryAsync(string name, string? description);
+        Task<ApiResponse<string>> DeleteCategoryAsync(int categoryId);
+        Task<ApiResponse<VariantDto>> UpdateVariantStockAsync(int variantId, int newStock);
+        Task<ApiResponse<string>> UpdateStockBatchAsync(UpdateStockBatchDto dto);
+        Task<ApiResponse<PagedResult<InventoryItemDto>>> GetInventoryAsync(int page, int pageSize, string? keyword = null);
+        Task<ApiResponse<UploadResultDto>> SaveProductImageAsync(Stream fileStream, string fileName, long fileSize);
+    }
+
+    public class ProductService : IProductService
+    {
+        private readonly IProductRepository _productRepo;
+        private readonly IReviewRepository _reviewRepo;
+        private readonly AppDbContext _context;
+        private readonly IHostEnvironment _env;
+
+        public ProductService(
+            IProductRepository productRepo,
+            IReviewRepository reviewRepo,
+            AppDbContext context,
+            IHostEnvironment env)
+        {
+            _productRepo = productRepo;
+            _reviewRepo = reviewRepo;
+            _context = context;
+            _env = env;
+        }
+
+        // ── Lấy danh sách với filter/sort ────────────────────────────
+        public async Task<ApiResponse<PagedResult<ProductSummaryDto>>> GetProductsAsync(
+            ProductFilterDto filter, string? userId = null)
+        {
+            var query = _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Reviews)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(filter.Category))
+                query = query.Where(p => p.Category == filter.Category);
+
+            if (!string.IsNullOrWhiteSpace(filter.Keyword))
+            {
+                var kw = filter.Keyword.Trim().ToLower();
+                query = query.Where(p =>
+                    p.Name.ToLower().Contains(kw) ||
+                    (p.Description != null && p.Description.ToLower().Contains(kw)));
+            }
+
+            if (filter.MinPrice.HasValue) query = query.Where(p => p.Price >= filter.MinPrice.Value);
+            if (filter.MaxPrice.HasValue) query = query.Where(p => p.Price <= filter.MaxPrice.Value);
+
+            if (!string.IsNullOrWhiteSpace(filter.Color))
+            {
+                var col = filter.Color.ToLower();
+                query = query.Where(p => p.Variants.Any(v => v.Color != null && v.Color.ToLower().Contains(col)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Size))
+            {
+                var sz = filter.Size.ToLower();
+                query = query.Where(p => p.Variants.Any(v => v.Size != null && v.Size.ToLower() == sz));
+            }
+
+            // Tối ưu hóa SQL translation cho việc sắp xếp top_rated
+            query = filter.SortBy switch
+            {
+                "price_asc" => query.OrderBy(p => p.Price),
+                "price_desc" => query.OrderByDescending(p => p.Price),
+                "best_selling" => query.OrderByDescending(p => p.SoldCount),
+                "top_rated" => query.OrderByDescending(p => p.Reviews.Select(r => (double?)r.Rating).Average() ?? 5.0),
+                _ => query.OrderByDescending(p => p.CreatedAt)
+            };
+
+            var total = await query.CountAsync();
+            var products = await query
+                .Skip((filter.Page - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            var wishlistIds = await GetUserWishlistIdsAsync(userId);
+
+            return ApiResponse<PagedResult<ProductSummaryDto>>.Ok(new PagedResult<ProductSummaryDto>
+            {
+                Items = products.Select(p => MapToSummary(p, wishlistIds)).ToList(),
+                TotalCount = total,
+                Page = filter.Page,
+                PageSize = filter.PageSize
+            });
+        }
+
+        // ── Chi tiết sản phẩm ────────────────────────────────────────
+        public async Task<ApiResponse<ProductDetailDto>> GetProductDetailAsync(int productId, string? userId = null)
+        {
+            var product = await _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Reviews.OrderByDescending(r => r.CreatedAt).Take(5))
+                .FirstOrDefaultAsync(p => p.ProductId == productId);
+
+            if (product == null)
+                return ApiResponse<ProductDetailDto>.Fail("Không tìm thấy sản phẩm");
+
+            bool isInWishlist = false;
+            if (!string.IsNullOrEmpty(userId))
+                isInWishlist = await _context.Wishlist
+                    .AnyAsync(w => w.UserId == userId && w.ProductId == productId);
+
+            return ApiResponse<ProductDetailDto>.Ok(MapToDetail(product, isInWishlist));
+        }
+
+        // ── Trang chủ: Sản phẩm bán chạy nhất ────────────────────────
+        public async Task<ApiResponse<List<ProductSummaryDto>>> GetBestSellersAsync(int limit, string? userId = null)
+        {
+            var products = await _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Reviews)
+                .OrderByDescending(p => p.SoldCount)
+                .Take(limit)
+                .ToListAsync();
+
+            var wishlistIds = await GetUserWishlistIdsAsync(userId);
+            var result = products.Select(p => MapToSummary(p, wishlistIds)).ToList();
+            return ApiResponse<List<ProductSummaryDto>>.Ok(result);
+        }
+
+        // ── Trang chủ: Sản phẩm mới về ───────────────────────────────
+        public async Task<ApiResponse<List<ProductSummaryDto>>> GetNewArrivalsAsync(int limit, string? userId = null)
+        {
+            var products = await _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Reviews)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(limit)
+                .ToListAsync();
+
+            var wishlistIds = await GetUserWishlistIdsAsync(userId);
+            var result = products.Select(p => MapToSummary(p, wishlistIds)).ToList();
+            return ApiResponse<List<ProductSummaryDto>>.Ok(result);
+        }
+
+        // ── Trang chủ: Sản phẩm khuyến mãi ───────────────────────────
+        public async Task<ApiResponse<List<ProductSummaryDto>>> GetDiscountProductsAsync(int limit, string? userId = null)
+        {
+            var products = await _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Reviews)
+                .Where(p => p.Discount != null && p.Discount > 0)
+                .OrderByDescending(p => p.Discount)
+                .Take(limit)
+                .ToListAsync();
+
+            var wishlistIds = await GetUserWishlistIdsAsync(userId);
+            var result = products.Select(p => MapToSummary(p, wishlistIds)).ToList();
+            return ApiResponse<List<ProductSummaryDto>>.Ok(result);
+        }
+
+        private async Task<HashSet<int>> GetUserWishlistIdsAsync(string? userId)
+        {
+            if (string.IsNullOrEmpty(userId)) return new HashSet<int>();
+            var ids = await _context.Wishlist
+                .Where(w => w.UserId == userId)
+                .Select(w => w.ProductId)
+                .ToListAsync();
+            return ids.ToHashSet();
+        }
+
+        // ── Admin: CRUD sản phẩm ─────────────────────────────────────
+        public async Task<ApiResponse<ProductDetailDto>> CreateProductAsync(CreateProductDto dto)
+        {
+            var product = new Product
+            {
+                Name = dto.Name.Trim(),
+                Description = dto.Description?.Trim() ?? string.Empty,
+                Price = dto.BasePrice,
+                Discount = dto.Discount,
+                MainImage = dto.ImageUrl ?? string.Empty,
+                Gender = dto.Gender ?? string.Empty,
+                Category = dto.Category ?? string.Empty,
+                CreatedAt = DateTime.UtcNow,
+                Variants = dto.Variants.Select(v => new ProductVariant
+                {
+                    Color = v.Color?.Trim() ?? string.Empty,
+                    Size = v.Size?.Trim() ?? string.Empty,
+                    StockQuantity = v.StockQuantity
+                }).ToList()
+            };
+
+            await _context.Products.AddAsync(product);
+            await _context.SaveChangesAsync();
+
+            return ApiResponse<ProductDetailDto>.Ok(MapToDetail(product, false), "Tạo sản phẩm thành công");
+        }
+
+        public async Task<ApiResponse<ProductDetailDto>> UpdateProductAsync(int productId, UpdateProductDto dto)
+        {
+            // Bổ sung Include Reviews để MapToDetail không bị lỗi tính toán số sao/lượt đánh giá
+            var product = await _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Reviews)
+                .FirstOrDefaultAsync(p => p.ProductId == productId);
+
+            if (product == null) return ApiResponse<ProductDetailDto>.Fail("Không tìm thấy sản phẩm");
+
+            if (!string.IsNullOrWhiteSpace(dto.Name)) product.Name = dto.Name.Trim();
+            if (dto.Description != null) product.Description = dto.Description.Trim();
+            if (dto.BasePrice.HasValue) product.Price = dto.BasePrice.Value;
+            if (dto.Discount.HasValue) product.Discount = dto.Discount.Value;
+            if (dto.ImageUrl != null) product.MainImage = dto.ImageUrl;
+            if (!string.IsNullOrEmpty(dto.Category)) product.Category = dto.Category;
+
+            await _context.SaveChangesAsync();
+            return ApiResponse<ProductDetailDto>.Ok(MapToDetail(product, false), "Cập nhật thành công");
+        }
+
+        public async Task<ApiResponse<string>> DeleteProductAsync(int productId)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null) return ApiResponse<string>.Fail("Không tìm thấy sản phẩm");
+
+            _context.Products.Remove(product);
+            await _context.SaveChangesAsync();
+            return ApiResponse<string>.Ok("OK", "Đã xóa sản phẩm");
+        }
+
+        // ── Danh mục ─────────────────────────────────────────────────
+        public async Task<ApiResponse<List<CategoryDto>>> GetCategoriesAsync()
+        {
+            var categories = await _context.Products
+                .Where(p => !string.IsNullOrEmpty(p.Category))
+                .Select(p => p.Category)
+                .Distinct()
+                .ToListAsync();
+
+            var result = categories.Select(c => new CategoryDto
+            {
+                Name = c,
+                ProductCount = _context.Products.Count(p => p.Category == c)
+            }).ToList();
+
+            return ApiResponse<List<CategoryDto>>.Ok(result);
+        }
+
+        public async Task<ApiResponse<CategoryDto>> CreateCategoryAsync(string name, string? description)
+        {
+            return ApiResponse<CategoryDto>.Ok(new CategoryDto { Name = name }, "Quản lý theo chuỗi trực tiếp");
+        }
+
+        public async Task<ApiResponse<string>> DeleteCategoryAsync(int categoryId)
+        {
+            return ApiResponse<string>.Ok("OK");
+        }
+
+        // ── Quản lý kho (Inventory) ──────────────────────────────────
+        public async Task<ApiResponse<VariantDto>> UpdateVariantStockAsync(int variantId, int newStock)
+        {
+            var variant = await _context.ProductVariants.FindAsync(variantId);
+            if (variant == null) return ApiResponse<VariantDto>.Fail("Không tìm thấy biến thể");
+            variant.StockQuantity = newStock;
+            await _context.SaveChangesAsync();
+            return ApiResponse<VariantDto>.Ok(MapVariant(variant), "Cập nhật tồn kho thành công");
+        }
+
+        public async Task<ApiResponse<string>> UpdateStockBatchAsync(UpdateStockBatchDto dto)
+        {
+            foreach (var item in dto.Items)
+            {
+                var v = await _context.ProductVariants.FindAsync(item.VariantId);
+                if (v != null) v.StockQuantity = item.NewStock;
+            }
+            await _context.SaveChangesAsync();
+            return ApiResponse<string>.Ok("OK", $"Đã cập nhật {dto.Items.Count} biến thể");
+        }
+
+        public async Task<ApiResponse<PagedResult<InventoryItemDto>>> GetInventoryAsync(
+            int page, int pageSize, string? keyword = null)
+        {
+            var query = _context.ProductVariants.Include(v => v.Product).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var kw = keyword.ToLower();
+                query = query.Where(v => v.Product!.Name.ToLower().Contains(kw));
+            }
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderBy(v => v.StockQuantity)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return ApiResponse<PagedResult<InventoryItemDto>>.Ok(new PagedResult<InventoryItemDto>
+            {
+                Items = items.Select(v => new InventoryItemDto
+                {
+                    VariantId = v.VariantId,
+                    ProductId = v.ProductId,
+                    ProductName = v.Product?.Name ?? "",
+                    Color = v.Color,
+                    Size = v.Size,
+                    StockQuantity = v.StockQuantity,
+                    StockStatus = v.StockQuantity == 0 ? "Hết hàng"
+                                  : v.StockQuantity < 5 ? "Sắp hết"
+                                  : "Còn hàng"
+                }).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            });
+        }
+
+        // ── Tải ảnh lên ──────────────────────────────────────────────
+        public async Task<ApiResponse<UploadResultDto>> SaveProductImageAsync(
+            Stream fileStream, string fileName, long fileSize)
+        {
+            if (fileSize > 5 * 1024 * 1024)
+                return ApiResponse<UploadResultDto>.Fail("Ảnh không vượt quá 5MB");
+
+            var ext = Path.GetExtension(fileName).ToLower();
+            if (!new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(ext))
+                return ApiResponse<UploadResultDto>.Fail("Chỉ chấp nhận .jpg, .png, .webp");
+
+            var dir = Path.Combine(_env.ContentRootPath, "wwwroot", "images", "products");
+            Directory.CreateDirectory(dir);
+
+            var name = $"{Guid.NewGuid():N}{ext}";
+            var path = Path.Combine(dir, name);
+            await using (var fs = new FileStream(path, FileMode.Create))
+                await fileStream.CopyToAsync(fs);
+
+            return ApiResponse<UploadResultDto>.Ok(new UploadResultDto
+            {
+                Url = $"/images/products/{name}",
+                FileName = name,
+                FileSizeBytes = fileSize
+            }, "Upload thành công");
+        }
+
+        // ── Bộ chuyển đổi thủ công (Vá lỗi đồng bộ trường Discount) ──
+        private static ProductSummaryDto MapToSummary(Product p, HashSet<int> wishlistIds)
+        {
+            return new ProductSummaryDto
+            {
+                ProductId = p.ProductId,
+                Name = p.Name,
+                BasePrice = p.Price,
+                ImageUrl = p.MainImage,
+                Category = p.Category,
+                IsActive = true,
+                SoldCount = p.SoldCount,
+                AverageRating = p.AverageRating,
+                ReviewCount = p.ReviewCount,
+                IsInWishlist = wishlistIds.Contains(p.ProductId),
+
+                // ✅ SỬA LỖI: Gán thêm Discount từ Entity sang DTO để Front-end hiển thị tag giảm giá
+                Discount = p.Discount
+            };
+        }
+
+        private static ProductDetailDto MapToDetail(Product p, bool isInWishlist) => new()
+        {
+            ProductId = p.ProductId,
+            Name = p.Name,
+            Description = p.Description,
+            BasePrice = p.Price,
+            ImageUrl = p.MainImage,
+            Category = p.Category,
+            SoldCount = p.SoldCount,
+            AverageRating = p.AverageRating,
+            ReviewCount = p.ReviewCount,
+            IsInWishlist = isInWishlist,
+            Discount = p.Discount, // ✅ Đảm bảo đồng bộ trường giảm giá tại chi tiết sản phẩm
+            Images = new List<ProductImageDto> { new ProductImageDto { ImageUrl = p.MainImage, IsMain = true } },
+            Variants = p.Variants.Select(MapVariant).ToList()
+        };
+
+        private static VariantDto MapVariant(ProductVariant v) => new()
+        {
+            VariantId = v.VariantId,
+            Color = v.Color,
+            Size = v.Size,
+            StockQuantity = v.StockQuantity,
+            PriceAdjustment = 0
+        };
+    }
+}

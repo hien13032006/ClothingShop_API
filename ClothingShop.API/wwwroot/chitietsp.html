@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Chi tiết sản phẩm</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+
+    <!--MENU Tiêu đề-->
+    <nav class="navbar">
+        <div class="logo">Clothing</div>
+
+        <ul class="nav-links">
+            <li><a href="index.html">TRANG CHỦ</a></li>
+            <li><a href="danhmuc.html">SẢN PHẨM</a></li>
+            <li><a href="danhmuc.html?type=banchay">HOST🔥</a></li>
+            <li><a href="danhmuc.html?type=moi">SẢN PHẨM MỚI</a></li>
+            <li><a href="danhmuc.html?type=khuyenmai">KHUYẾN MÃI</a></li>
+
+            <li class="dropdown">
+                <a href="danhmuc.html?gender=nam">NAM <i class="fa-solid fa-chevron-down"></i></a>
+                <ul class="dropdown-content">
+                    <li><a href="danhmuc.html?gender=nam&cat=quan">Quần</a></li>
+                    <li><a href="danhmuc.html?gender=nam&cat=khoac">Áo khoác</a></li>
+                    <li><a href="danhmuc.html?gender=nam&cat=somi">Áo sơ mi</a></li>
+                    <li><a href="danhmuc.html?gender=nam&cat=polo">Áo Polo</a></li>
+                    <li><a href="danhmuc.html?gender=nam&cat=thun">Áo thun</a></li>
+                    <li><a href="danhmuc.html?gender=nam&cat=khac">Khác</a></li>
+                </ul>
+            </li>
+
+            <li class="dropdown">
+                <a href="danhmuc.html?gender=nu">NỮ <i class="fa-solid fa-chevron-down"></i></a>
+                <ul class="dropdown-content">
+                    <li><a href="danhmuc.html?gender=nu&cat=quan">Quần</a></li>
+                    <li><a href="danhmuc.html?gender=nu&cat=vaydam">Váy-Đầm</a></li>
+                    <li><a href="danhmuc.html?gender=nu&cat=khoac">Áo khoác</a></li>
+                    <li><a href="danhmuc.html?gender=nu&cat=somi">Áo sơ mi</a></li>
+                    <li><a href="danhmuc.html?gender=nu&cat=kieu">Áo kiểu</a></li>
+                    <li><a href="danhmuc.html?gender=nu&cat=thun">Áo thun</a></li>
+                    <li><a href="danhmuc.html?gender=nu&cat=khac">Khác</a></li>
+                </ul>
+            </li>
+
+            <li class="dropdown">
+                <a href="danhmuc.html?gender=treem">TRẺ EM <i class="fa-solid fa-chevron-down"></i></a>
+                <ul class="dropdown-content">
+                    <li><a href="danhmuc.html?gender=treem&cat=begai">Thời trang bé gái</a></li>
+                    <li><a href="danhmuc.html?gender=treem&cat=betrai">Thời trang bé trai</a></li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="nav-right-section">
+            <div class="nav-icons">
+                <a href="taikhoan.html" class="icon-item"><i class="fa-regular fa-user"></i></a>
+                <a href="giohang.html" class="icon-item">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-count" class="cart-badge">0</span>
+                </a>
+                <a href="#" class="icon-item"><i class="fa-regular fa-bell"></i></a>
+            </div>
+
+            <div class="search-box">
+                <input type="text" placeholder="Tìm kiếm...">
+                <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+        </div>
+
+    </nav>
+
+
+    <main class="container">
+        <div class="product-detail-wrapper">
+            <div class="detail-left">
+                <div class="main-image">
+                    <img id="main-img" src="images/placeholder.jpg" alt="Sản phẩm">
+                </div>
+                <div class="thumbnail-list">
+                </div>
+            </div>
+
+            <div class="detail-right">
+                <h1 id="p-name">Đang tải tên sản phẩm...</h1>
+                <div class="rating-sold">
+                    <span>Đang tải đánh giá...</span>
+                </div>
+
+                <div class="price-section">
+                    <span id="p-price" class="current-price">0đ</span>
+                    <span class="old-price">0đ</span>
+                    <span class="discount-tag">-0%</span>
+                </div>
+
+                <div class="info-row">
+                    <label><i class="fa-solid fa-truck-fast"></i> Vận chuyển:</label>
+                    <span>Freeship nội thành đơn từ 500K</span>
+                </div>
+
+                <div class="option-group">
+                    <label>Màu sắc:</label>
+                    <div class="options" id="color-options">
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label>Kích thước:</label>
+                    <div class="options" id="size-options">
+                    </div>
+                </div>
+
+                <div class="quantity-section">
+                    <label>Số lượng:</label>
+                    <div class="quantity-control">
+                        <button onclick="changeQty(-1)">-</button>
+                        <input type="number" id="qty" value="1" min="1" readonly>
+                        <button onclick="changeQty(1)">+</button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="add-cart-btn" onclick="addToCart()" > <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ hàng</button>
+                    <button class="buy-now-btn">Mua ngay</button>
+                </div>
+
+                <div id="cart-toast" class="cart-toast">
+                    <div class="toast-content">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Đã thêm sản phẩm vào giỏ hàng!</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <section class="product-tabs">
+            <div class="tab-item">
+                <h3 class="tab-title">MÔ TẢ SẢN PHẨM</h3>
+                <div class="tab-content" id="p-desc">
+                </div>
+            </div>
+
+            <div class="tab-item">
+                <h3 class="tab-title">BẢNG SIZE</h3>
+                <div class="tab-content">
+                    <table class="size-table">
+                        <thead>
+                            <tr>
+                                <th>SIZE</th>
+                                <th>DÀI</th>
+                                <th>V1</th>
+                                <th>V2</th>
+                                <th>NGANG VAI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>FREESIZE</td>
+                                <td>56cm</td>
+                                <td>< 92cm</td>
+                                <td>< 86cm</td>
+                                <td>34cm</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-item">
+                <h3 class="tab-title">HƯỚNG DẪN BẢO QUẢN VÀ CHÍNH SÁCH BÁN HÀNG</h3>
+                <div class="tab-content" id="p-policy">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!--Footer-->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h1 class="footer-logo">Clothing</h1>
+                <p class="footer-slogan">Shop áo quần online</p>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Giới thiệu</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Liên hệ</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hướng dẫn</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hỗ trợ khách hàng</a></li>
+                </ul>
+                <div class="footer-socials">
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="web.js"></script>
+
+</body>
+</html>

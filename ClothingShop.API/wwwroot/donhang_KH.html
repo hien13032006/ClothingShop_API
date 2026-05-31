@@ -1,0 +1,132 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách đơn hàng</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="donhang_KH.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <!--MENU Tiêu đề-->
+    <nav class="navbar">
+        <div class="logo">Clothing</div>
+        <div class="nav-main-content">
+            <ul class="nav-links">
+                <li><a href="index.html">TRANG CHỦ</a></li>
+                <li><a href="danhmuc.html">SẢN PHẨM</a></li>
+                <li><a href="danhmuc.html?type=banchay">HOT🔥</a></li>
+                <li><a href="danhmuc.html?type=moi">SẢN PHẨM MỚI</a></li>
+                <li><a href="danhmuc.html?type=khuyenmai">KHUYẾN MÃI</a></li>
+
+                <li class="dropdown">
+                    <a href="danhmuc.html?gender=nam">NAM <i class="fa-solid fa-chevron-down"></i></a>
+                    <ul class="dropdown-content">
+                        <li><a href="danhmuc.html?gender=nam&cat=quan">Quần</a></li>
+                        <li><a href="danhmuc.html?gender=nam&cat=khoac">Áo khoác</a></li>
+                        <li><a href="danhmuc.html?gender=nam&cat=somi">Áo sơ mi</a></li>
+                        <li><a href="danhmuc.html?gender=nam&cat=polo">Áo Polo</a></li>
+                        <li><a href="danhmuc.html?gender=nam&cat=thun">Áo thun</a></li>
+                        <li><a href="danhmuc.html?gender=nam&cat=khac">Khác</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+                    <a href="danhmuc.html?gender=nu">NỮ <i class="fa-solid fa-chevron-down"></i></a>
+                    <ul class="dropdown-content">
+                        <li><a href="danhmuc.html?gender=nu&cat=quan">Quần</a></li>
+                        <li><a href="danhmuc.html?gender=nu&cat=vaydam">Váy-Đầm</a></li>
+                        <li><a href="danhmuc.html?gender=nu&cat=khoac">Áo khoác</a></li>
+                        <li><a href="danhmuc.html?gender=nu&cat=somi">Áo sơ mi</a></li>
+                        <li><a href="danhmuc.html?gender=nu&cat=kieu">Áo kiểu</a></li>
+                        <li><a href="danhmuc.html?gender=nu&cat=thun">Áo thun</a></li>
+                        <li><a href="danhmuc.html?gender=nu&cat=khac">Khác</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+                    <a href="danhmuc.html?gender=treem">TRẺ EM <i class="fa-solid fa-chevron-down"></i></a>
+                    <ul class="dropdown-content">
+                        <li><a href="danhmuc.html?gender=treem&cat=begai">Thời trang bé gái</a></li>
+                        <li><a href="danhmuc.html?gender=treem&cat=betrai">Thời trang bé trai</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="search-box-container">
+                <div class="search-box">
+                    <input type="text" placeholder="Tìm kiếm sản phẩm...">
+                    <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+            </div>
+
+        </div>
+        <div class="nav-right-section">
+            <div class="nav-icons">
+                <div class="dropdown profile-dropdown">
+                    <a href="javascript:void(0)" class="icon-item">
+                        <i class="fa-regular fa-user"></i>
+                    </a>
+                    <ul class="dropdown-content profile-menu">
+                        <li><a href="profile.html"><i class="fa-solid fa-user-gear"></i> Tài khoản của tôi</a></li>
+                        <li><a href="donhang_KH.html"><i class="fa-solid fa-box-open"></i> Đơn mua</a></li>
+                        <li><a href="login.html" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a></li>
+                    </ul>
+                </div>
+
+                <a href="giohang.html" class="icon-item">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-count" class="cart-badge">0</span>
+                </a>
+            </div>
+
+        </div>
+
+    </nav>
+    <div class="order-container">
+        <div class="order-tabs">
+            <div class="tab-item active" onclick="filterByStatus('all', this)">Tất cả</div>
+            <div class="tab-item" onclick="filterByStatus('pending', this)">Chờ xác nhận</div>
+            <div class="tab-item" onclick="filterByStatus('shipping', this)">Đang giao</div>
+            <div class="tab-item" onclick="filterByStatus('completed', this)">Hoàn thành</div>
+            <div class="tab-item" onclick="filterByStatus('cancelled', this)">Đã hủy</div>
+        </div>
+
+        <div id="order-render-container" class="order-list">
+        </div>
+    </div>
+
+    <!--Footer-->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h1 class="footer-logo">Clothing</h1>
+                <p class="footer-slogan">Shop áo quần online</p>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Giới thiệu</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Liên hệ</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hướng dẫn</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hỗ trợ khách hàng</a></li>
+                </ul>
+                <div class="footer-socials">
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="donhang_KH.js"></script>
+</body>
+</html>

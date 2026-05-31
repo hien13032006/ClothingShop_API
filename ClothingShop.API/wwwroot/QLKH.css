@@ -1,0 +1,221 @@
+﻿/* --- TỔNG THỂ --- */
+body {
+    background-color: #f8f9fa;
+    margin: 0;
+}
+
+.admin-container {
+    padding: 30px 50px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* --- HEADER */
+.logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+#name {
+    text-decoration: none;
+    font-size: 55px;
+    font-weight: bold;
+    color: #333;
+    letter-spacing: 1px;
+    line-height: 1;
+}
+
+.logo span {
+    color: #333;
+    font-weight: 300;
+}
+
+#qlkh {
+    text-decoration: none;
+    font-size: 40px;
+    font-weight: bold;
+    color: #333;
+}
+
+#name:hover {
+    color: #ff6b81;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* Thêm đổ bóng */
+}
+
+
+/* --- THANH TÌM KIẾM --- */
+.search-bar-container {
+    margin-bottom: 25px;
+}
+
+.search-input-group {
+    position: relative;
+    max-width: 400px;
+}
+
+    .search-input-group input {
+        width: 100%;
+        padding: 12px 40px 12px 15px;
+        border-radius: 25px;
+        border: 1px solid #ddd;
+        background: #fff;
+        font-size: 15px;
+        transition: 0.3s;
+    }
+
+        .search-input-group input:focus {
+            border-color: #e8959f;
+            outline: none;
+            box-shadow: 0 0 8px rgba(232, 149, 159, 0.2);
+        }
+
+    .search-input-group i {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+    }
+
+/* --- BẢNG DỮ LIỆU --- */
+.table-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+    overflow: hidden;
+}
+
+.table-wrapper {
+    max-height: 500px; /* Độ cao để hiện thanh cuộn nội bộ */
+    overflow-y: auto;
+}
+
+.customer-table, .history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .customer-table th, .history-table th {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        padding: 15px;
+        color: #666;
+        font-size: 13px;
+        text-transform: uppercase;
+        border-bottom: 2px solid #f1f1f1;
+        z-index: 5;
+    }
+
+    .customer-table td, .history-table td {
+        padding: 15px;
+        text-align: center;
+        border-bottom: 1px solid #f9f9f9;
+        color: #444;
+    }
+
+    .customer-table tbody tr:hover {
+        background-color: #fff9fa;
+        transition: 0.2s;
+    }
+
+/* --- NÚT BẤM (BUTTONS) --- */
+.btn-lock, .btn-unlock {
+    padding: 7px 18px;
+    border-radius: 20px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-lock {
+    background: #e8959f;
+    color: white;
+}
+
+    .btn-lock:hover {
+        background: #d4848d;
+    }
+
+.btn-unlock {
+    background: #6c757d;
+    color: white;
+}
+
+    .btn-unlock:hover {
+        background: #5a6268;
+    }
+
+.btn-back {
+    background: #eee;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+    .btn-back:hover {
+        background: #ddd;
+    }
+
+/* --- TRANG CHI TIẾT --- */
+.info-card {
+    background: #fffafa;
+    border: 1px solid #fce4e6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.customer-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+    .customer-info-grid p {
+        margin: 5px 0;
+        color: #333;
+    }
+
+/* --- TAG TRẠNG THÁI --- */
+.status-tag {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* --- HIỆU ỨNG CHUYỂN CẢNH --- */
+#detail-section, #list-section {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- TÙY CHỈNH THANH CUỘN (SCROLLBAR) --- */
+.table-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: #e8959f;
+    border-radius: 10px;
+}

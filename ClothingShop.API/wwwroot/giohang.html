@@ -1,0 +1,146 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Giỏ hàng</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+
+    <style>
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .logo a {
+                text-decoration: none;
+                font-size: 55px;
+                font-weight: bold;
+                color: #333;
+                letter-spacing: 1px;
+            }
+
+            .logo span {
+                color: #333;
+                font-weight: 320;
+            }
+
+            .logo a:hover {
+                color: #ff6b81;
+                text-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* Thêm đổ bóng */
+            }
+
+        .nav-right-section {
+            margin-left: auto;
+            margin-right: 20px;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            width: 300px;
+        }
+
+        .nav-icons {
+            margin-left: auto;
+            margin-right: 5px;
+        }
+    </style>
+
+    <!--MENU Tiêu đề-->
+    <nav class="navbar">
+
+        <div class="logo">
+            <a href="index.html">Clothing</a>
+            <span>|</span><i class="fa-solid fa-cart-shopping"></i>
+        </div>
+
+        <div class="nav-right-section">
+            <div class="nav-icons">
+                <a href="taikhoan.html" class="icon-item"><i class="fa-regular fa-user"></i></a>
+                <a href="#" class="icon-item"><i class="fa-regular fa-bell"></i></a>
+            </div>
+
+            <div class="search-box">
+                <input type="text" placeholder="Tìm kiếm...">
+                <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+        </div>
+
+    </nav>
+
+    <main class="cart-container">
+        <div class="cart-header-grid">
+            <div><input type="checkbox" id="check-all-top"> Sản phẩm</div>
+            <div>Phân loại</div>
+            <div>Số lượng</div>
+            <div>Số tiền</div>
+            <div>Thao tác</div>
+        </div>
+
+        <div id="cart-items-list"></div>
+
+        <div class="cart-footer">
+            <div class="voucher-section">
+                <a href="#" class="voucher-link">Chọn hoặc nhập mã</a>
+            </div>
+            <div class="checkout-bar">
+                <div class="checkout-left">
+                    <input type="checkbox" id="check-all-bottom">
+                    <label for="check-all-bottom">Chọn tất cả sản phẩm</label>
+                </div>
+                <div class="checkout-right">
+                    <div class="total-price-block">
+                        Tổng tiền: <span id="cart-total-amount">0đ</span>
+                    </div>
+                    <button class="btn-checkout" onclick="checkout()">Mua hàng</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="custom-alert" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Thông báo</h3>
+            <p id="modal-message">Vui lòng chọn ít nhất 1 sản phẩm để tiếp tục thanh toán!</p>
+            <button class="btn-confirm" onclick="closeModal()">Đồng ý</button>
+        </div>
+    </div>
+
+    <!--Footer-->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h1 class="footer-logo">Clothing</h1>
+                <p class="footer-slogan">Shop áo quần online</p>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Giới thiệu</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Liên hệ</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hướng dẫn</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hỗ trợ khách hàng</a></li>
+                </ul>
+                <div class="footer-socials">
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="web.js"></script>
+
+</body>
+</html>

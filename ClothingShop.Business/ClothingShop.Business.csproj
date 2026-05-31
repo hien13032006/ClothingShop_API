@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ClothingShop.Business</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Hash mật khẩu -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <!-- Google OAuth -->
+    <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
+    <!-- JWT -->
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.9.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.9.0" />
+    <!-- EF Core (dùng trong Services) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
+    <!-- Config -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.5" />
+    <!-- Logging -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.5" />
+    <!-- Hosting (IWebHostEnvironment cho upload) - not using nuget; local minimal interface provided -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClothingShop.Data\ClothingShop.Data.csproj" />
+    <ProjectReference Include="..\ClothingShop.Models\ClothingShop.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Hosting\" />
+  </ItemGroup>
+
+</Project>

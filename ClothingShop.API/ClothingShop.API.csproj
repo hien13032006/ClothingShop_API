@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ClothingShop.API</RootNamespace>
+    <!-- Đặt port mặc định -->
+    <ApplicationUrl>http://localhost:5000;https://localhost:5001</ApplicationUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- JWT Bearer Authentication -->
+    <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
+    <!-- EF Core Design (cho dotnet ef migrations) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!-- Swagger UI -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
+    <!-- BCrypt (dùng trong SeedDataService) -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClothingShop.Business\ClothingShop.Business.csproj" />
+    <ProjectReference Include="..\ClothingShop.Data\ClothingShop.Data.csproj" />
+    <ProjectReference Include="..\ClothingShop.Models\ClothingShop.Models.csproj" />
+  </ItemGroup>
+
+</Project>

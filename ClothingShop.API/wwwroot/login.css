@@ -1,0 +1,191 @@
+﻿/* Tải font chữ hiện đại, sạch sẽ */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    background: #f8f9fa; /* Màu nền nhẹ */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-container {
+    background: white;
+    padding: 60px 50px; /* Tăng padding để tạo khoảng trống thoáng */
+    border-radius: 20px; /* Bo góc mạnh hơn cho container */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Bóng nhẹ, hiện đại */
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+}
+
+.login-title {
+    color: #e8959f; /* Màu hồng nhạt theo thiết kế */
+    font-size: 32px;
+    margin-bottom: 50px;
+    font-weight: 600;
+}
+
+.input-group {
+    margin-bottom: 25px;
+}
+
+    .input-group input {
+        width: 100%;
+        padding: 18px 20px; /* Padding lớn hơn để ô input trông thoáng */
+        border: 1px solid #ddd;
+        border-radius: 15px; /* Bo góc 15px */
+        box-sizing: border-box;
+        font-size: 16px;
+        color: #888;
+        outline: none;
+        transition: 0.3s;
+    }
+
+        .input-group input:focus {
+            border-color: #e8959f; /* Đổi màu viền khi focus */
+            color: #333;
+        }
+
+.btn-login-main {
+    width: 100%;
+    padding: 18px;
+    background-color: #e8959f; /* Màu hồng đậm hơn, phù hợp nút bấm */
+    color: white;
+    border: none;
+    border-radius: 15px; /* Bo góc 15px đồng bộ */
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: 0.3s;
+}
+
+    .btn-login-main:hover {
+        background-color: #fb5a70; /* Hiệu ứng hover hồng đậm */
+    }
+
+.login-footer-links {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    font-size: 14px;
+    margin-bottom: 40px; /* Khoảng cách trước khi đến nút Google */
+}
+
+    .login-footer-links a {
+        color: #0056b3; /* Màu xanh cho liên kết */
+        text-decoration: none;
+        transition: 0.3s;
+    }
+
+        .login-footer-links a:hover {
+            text-decoration: underline;
+        }
+
+/* Kiểu dáng cho phần or-separator */
+.or-separator {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.separator-text {
+    padding: 0 10px;
+    color: #888;
+    font-size: 14px;
+}
+
+.or-separator::before,
+.or-separator::after {
+    content: "";
+    flex-grow: 1;
+    height: 1px;
+    background-color: #ddd;
+}
+
+/* Nút Đăng nhập bằng Google */
+.btn-google-login {
+    width: 100%;
+    padding: 15px;
+    background-color: #f2f2f2; /* Màu xám nhạt cho nút Google */
+    color: #333;
+    border: none;
+    border-radius: 15px; /* Bo góc đồng bộ */
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+    .btn-google-login:hover {
+        background-color: #e6e6e6; /* Hiệu ứng hover xám đậm */
+    }
+
+.google-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 15px;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4); /* Làm tối nền phía sau */
+    display: none; /* Mặc định ẩn */
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-box {
+    background: white;
+    font-family: "Roboto";
+    padding: 30px;
+    border-radius: 15px; /* Bo góc 15px đồng bộ */
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+    .modal-box h3 {
+        color: #e8959f; /* Màu hồng thương hiệu */
+        margin-bottom: 15px;
+    }
+
+    .modal-box p {
+        color: #555;
+        line-height: 1.5;
+        margin-bottom: 25px;
+    }
+
+
+.btn-confirm {
+    background-color: #e8959f;
+    color: white;
+    border: none;
+    padding: 10px 40px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+    .btn-confirm:hover {
+        background-color: #fb5a70;
+    }

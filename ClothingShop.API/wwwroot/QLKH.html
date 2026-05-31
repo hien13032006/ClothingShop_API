@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Quản lý khách hàng - Clothing</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="QLKH.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="logo">
+            <a href="index.html" id="name"> Clothing</a>
+            <span> |</span> <a href="#" id="qlkh">Quản lý khách hàng</a>
+        </div>
+
+        <div id="list-section">
+            <div class="search-bar-container">
+                <div class="search-input-group">
+                    <input type="text" id="customer-search" placeholder="Tìm kiếm tên hoặc SĐT...">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+            </div>
+            <div class="table-card">
+                <div class="table-wrapper">
+                    <table class="customer-table">
+                        <thead>
+                            <tr>
+                                <th>Tên</th>
+                                <th>Email</th>
+                                <th>SĐT</th>
+                                <th>Địa chỉ</th>
+                                <th>Quản lý</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customer-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="detail-section" style="display: none;">
+            <button class="btn-back" onclick="backToList()">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+            </button>
+            <div class="info-card">
+                <h4>Thông tin khách hàng</h4>
+                <div class="customer-info-grid">
+                    <p><strong>Họ tên:</strong> <span id="det-name"></span></p>
+                    <p><strong>SĐT:</strong> <span id="det-phone"></span></p>
+                    <p><strong>Email:</strong> <span id="det-email"></span></p>
+                    <p><strong>Địa chỉ:</strong> <span id="det-address"></span></p>
+                </div>
+            </div>
+            <h4>Lịch sử mua hàng</h4>
+            <div class="table-card">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Mã ĐH</th>
+                            <th>Ngày mua</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchase-history"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!--Footer-->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h1 class="footer-logo">Clothing</h1>
+                <p class="footer-slogan">Shop áo quần online</p>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Giới thiệu</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Liên hệ</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hướng dẫn</a></li>
+                    <li><a href="#"><i class="fa-solid fa-angles-right"></i> Hỗ trợ khách hàng</a></li>
+                </ul>
+                <div class="footer-socials">
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="QLKH.js"></script>
+</body>
+</html>

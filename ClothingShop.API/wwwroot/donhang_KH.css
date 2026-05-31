@@ -1,0 +1,159 @@
+﻿body
+{
+}
+
+/* --- TRANG DANH SÁCH ĐƠN HÀNG --- */
+.order-container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 0 10px;
+}
+
+/* Tab trạng thái */
+.order-tabs {
+    display: flex;
+    background: #fff;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.tab-item {
+    flex: 1;
+    text-align: center;
+    padding: 16px 0;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+    transition: 0.3s;
+}
+
+    .tab-item.active {
+        color: #ff6b81; /* Màu hồng chủ đạo của shop bạn */
+        border-bottom: 2px solid #ff6b81;
+    }
+
+/* Thẻ đơn hàng */
+.order-card {
+    background: #fff;
+    margin-bottom: 12px;
+    padding: 20px;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.shop-label {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.order-status {
+    color: #ee4d2d;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.order-divider {
+    border: 0;
+    border-top: 1px solid #f5f5f5;
+    margin: 10px 0;
+}
+
+/* Chi tiết sản phẩm trong đơn */
+.order-product-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+    .order-product-item img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid #e1e1e1;
+    }
+
+.product-details {
+    flex: 1;
+}
+
+.product-title {
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 5px;
+}
+
+.product-variant {
+    color: #888;
+    font-size: 13px;
+}
+
+.product-price-info {
+    text-align: right;
+}
+
+.old-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 13px;
+    margin-right: 5px;
+}
+
+.current-price {
+    color: #ee4d2d;
+    font-size: 15px;
+}
+
+/* Footer đơn hàng */
+.order-card-footer {
+    text-align: right;
+}
+
+.total-section {
+    padding: 15px 0;
+}
+
+.total-amount {
+    font-size: 24px;
+    color: #ee4d2d;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+.order-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    min-width: 150px;
+    border: 1px solid #ddd;
+}
+
+.btn-main {
+    background-color: #ff6b81;
+    color: #fff;
+    border: none;
+}
+
+    .btn-main:hover {
+        background-color: #ff4757;
+    }
+
+.btn-sub:hover {
+    background-color: #f8f8f8;
+}
