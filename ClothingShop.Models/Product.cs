@@ -11,9 +11,7 @@ namespace ClothingShop.Models
 
         [Required]
         public string Name { get; set; } = string.Empty;
-
         public decimal Price { get; set; }
-        public decimal? OldPrice { get; set; }
         public int? Discount { get; set; }
         public string MainImage { get; set; } = string.Empty;
         public List<string> Thumbnails { get; set; } = new List<string>();

@@ -49,8 +49,6 @@ namespace ClothingShop.Business.Services
                 Color = variant.Color,
                 Size = variant.Size,
                 StockQuantity = variant.StockQuantity,
-                PriceAdjustment = 0,                  // Trả về số 0 mặc định để giữ tương thích DTO
-                ActualPrice = product.Price       // Giá thực tế lấy trực tiếp bằng giá gốc của sản phẩm
             }, "Thêm biến thể thành công");
         }
 
@@ -76,8 +74,6 @@ namespace ClothingShop.Business.Services
                 Color = variant.Color,
                 Size = variant.Size,
                 StockQuantity = variant.StockQuantity,
-                PriceAdjustment = 0,                                // Trả về số 0 mặc định để giữ tương thích DTO
-                ActualPrice = variant.Product?.Price ?? 0       // Lấy giá gốc của sản phẩm liên kết
             }, "Cập nhật biến thể thành công");
         }
 

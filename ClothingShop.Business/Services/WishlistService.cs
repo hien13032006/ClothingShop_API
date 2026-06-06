@@ -20,7 +20,7 @@ namespace ClothingShop.Business.Services
 
         public async Task<ApiResponse<List<ProductSummaryDto>>> GetWishlistAsync(string userId)
         {
-            // ĐÃ SỬA: Loại bỏ .ThenInclude(p => p!.Category) vì Category bây giờ là thuộc tính kiểu string trực tiếp
+            // ĐÃ SỬA: Loại bỏ .ThenInclude(p => p!.Category) vì Category bây giờ là thuộc tính kiểu string trực tiếp
             var items = await _context.Wishlist
                 .Where(w => w.UserId == userId)
                 .Include(w => w.Product).ThenInclude(p => p!.Reviews)
@@ -29,21 +29,27 @@ namespace ClothingShop.Business.Services
                 .ToListAsync();
 
             var dtos = items
-                .Where(w => w.Product != null) // ĐÃ SỬA: Loại bỏ check IsActive
+                .Where(w => w.Product != null) // ĐÃ SỬA: Loại bỏ check IsActive
                 .Select(w => {
                     var p = w.Product!;
-                    var avg = p.Reviews.Any() ? p.Reviews.Average(r => (double)r.Rating) : 0;
+
+                    // Đồng bộ logic tính toán AverageRating giống hệt bên ProductModel (Mặc định 5.0 nếu chưa có review)
+                    var avg = p.Reviews.Any() ? p.Reviews.Average(r => (double)r.Rating) : 5.0;
+
                     return new ProductSummaryDto
                     {
                         ProductId = p.ProductId,
                         Name = p.Name,
-                        BasePrice = p.Price,       // ĐÃ SỬA: Đổi BasePrice -> Price
-                        ImageUrl = p.MainImage,   // ĐÃ SỬA: Đổi ImageUrl -> MainImage
-                        Category = p.Category,    // ĐÃ SỬA: Lấy trực tiếp chuỗi Category thay vì Category.Name
-                        IsActive = true,          // Đồng bộ với cấu trúc DTO (luôn luôn active)
+                        Price = p.Price,            // ✅ ĐÃ ĐỒNG BỘ: Sửa từ BasePrice thành Price
+                        MainImage = p.MainImage,    // ✅ ĐÃ ĐỒNG BỘ: Sửa từ ImageUrl thành MainImage
+                        Category = p.Category,      // ✅ ĐÃ SỬA: Lấy trực tiếp chuỗi Category thay vì Category.Name
+                        Gender = p.Gender,          // ✅ ĐỒNG BỘ: Đảm bảo có Gender nếu DTO yêu cầu
+                        IsActive = true,            // Đồng bộ với cấu trúc DTO (luôn luôn active)
                         SoldCount = p.SoldCount,
                         AverageRating = Math.Round(avg, 1),
-                        ReviewCount = p.Reviews.Count
+                        ReviewCount = p.Reviews.Count,
+                        IsInWishlist = true,        // ✅ CẬP NHẬT: Vì nằm trong danh sách Wishlist nên luôn là true
+                        Discount = p.Discount       // ✅ ĐỒNG BỘ: Bổ sung Discount để hiển thị % giảm giá ngoài giao diện
                     };
                 })
                 .ToList();

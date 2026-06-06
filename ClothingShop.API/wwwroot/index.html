@@ -62,26 +62,26 @@
             </div>
         </div>
 
-            <div class="nav-right-section">
-                <div class="nav-icons">
-                    <div class="dropdown profile-dropdown">
-                        <a href="javascript:void(0)" class="icon-item">
-                            <i class="fa-regular fa-user"></i>
-                        </a>
-                        <ul class="dropdown-content profile-menu">
-                            <li><a href="profile.html"><i class="fa-solid fa-user-gear"></i> Tài khoản của tôi</a></li>
-                            <li><a href="donhang_KH.html"><i class="fa-solid fa-box-open"></i> Đơn mua</a></li>
-                            <li><a href="login.html" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a></li>
-                        </ul>
-                    </div>
-
-                    <a href="giohang.html" class="icon-item">
-                        <i class="fa-solid fa-cart-shopping"></i>
-                        <span id="cart-count" class="cart-badge">0</span>
+        <div class="nav-right-section">
+            <div class="nav-icons">
+                <div class="dropdown profile-dropdown">
+                    <a href="javascript:void(0)" class="icon-item">
+                        <i class="fa-regular fa-user"></i>
                     </a>
+                    <ul class="dropdown-content profile-menu">
+                        <li><a href="profile.html"><i class="fa-solid fa-user-gear"></i> Tài khoản của tôi</a></li>
+                        <li><a href="donhang_KH.html"><i class="fa-solid fa-box-open"></i> Đơn mua</a></li>
+                        <li><a href="login.html" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a></li>
+                    </ul>
                 </div>
 
+                <a href="giohang.html" class="icon-item">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-count" class="cart-badge">0</span>
+                </a>
             </div>
+
+        </div>
 
     </nav>
 
@@ -142,6 +142,32 @@
         </div>
         <a id="XemAll" href="danhmuc.html?type=khuyenmai">Xem tất cả</a>
     </section>
+
+    <div id="quick-variant-modal" class="q-modal">
+        <div class="q-modal-content">
+            <span class="q-close-btn" onclick="closeQuickVariantModal()">&times;</span>
+            <div class="q-product-brief">
+                <img id="q-modal-img" src="" alt="Product Image">
+                <div>
+                    <h3 id="q-modal-name">Tên sản phẩm</h3>
+                    <p id="q-modal-price" style="color: red; font-weight: bold;">0đ</p>
+                </div>
+            </div>
+
+            <div class="q-variant-section">
+                <label>Chọn kích cỡ / phân loại:</label>
+                <div id="q-variant-list" class="q-variant-options">
+                </div>
+            </div>
+
+            <div class="q-quantity-section">
+                <label>Số lượng:</label>
+                <input type="number" id="q-modal-qty" value="1" min="1" style="width: 60px; padding: 5px; text-align: center;">
+            </div>
+
+            <button id="q-modal-submit-btn" class="q-submit-btn">Xác nhận</button>
+        </div>
+    </div>
 
     <!--Footer-->
     <footer class="main-footer">

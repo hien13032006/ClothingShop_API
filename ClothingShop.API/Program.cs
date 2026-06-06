@@ -151,8 +151,11 @@ builder.Logging.AddDebug();
 // ── Build & Pipeline ──────────────────────────────────────────────
 var app = builder.Build();
 
+app.UseStaticFiles();
+
 app.UseGlobalExceptionHandler();   // 1. Bắt mọi exception chưa xử lý
 app.UseRateLimiting();             // 2. Rate limiting (chống abuse)
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -163,8 +166,6 @@ if (app.Environment.IsDevelopment())
        // c.RoutePrefix = string.Empty;  // Swagger tại http://localhost:PORT/
     });
 }
-
-app.UseStaticFiles();              // 3. Phục vụ ảnh từ wwwroot/
 app.UseCors("AllowAll");           // 4. CORS
 app.UseHttpsRedirection();         // 5. HTTPS
 app.UseAuthentication();           // 6. Xác thực JWT — PHẢI trước Authorization

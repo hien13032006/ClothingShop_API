@@ -161,8 +161,8 @@ namespace ClothingShop.Data
                 e.Property(p => p.ProductId).HasColumnName("product_id").ValueGeneratedOnAdd();
                 e.Property(p => p.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
                 e.Property(p => p.Description).HasColumnName("description");
+                e.Property(p => p.Policy).HasColumnName("policy");
                 e.Property(p => p.Price).HasColumnName("price").HasColumnType("decimal(18,2)").IsRequired();
-                e.Property(p => p.OldPrice).HasColumnName("old_price").HasColumnType("decimal(18,2)");
                 e.Property(p => p.Discount).HasColumnName("discount").HasDefaultValue(0); // Kiểu int? theo đúng Model
                 e.Property(p => p.MainImage).HasColumnName("main_image").HasMaxLength(500);
 

@@ -195,6 +195,7 @@ namespace ClothingShop.Business.Services
             {
                 Name = dto.Name.Trim(),
                 Description = dto.Description?.Trim() ?? string.Empty,
+                Policy = dto.Policy?.Trim() ?? string.Empty,
                 Price = dto.BasePrice,
                 Discount = dto.Discount,
                 MainImage = dto.ImageUrl ?? string.Empty,
@@ -367,16 +368,15 @@ namespace ClothingShop.Business.Services
             {
                 ProductId = p.ProductId,
                 Name = p.Name,
-                BasePrice = p.Price,
-                ImageUrl = p.MainImage,
+                Price = p.Price,          // ✅ ĐÃ ĐỒNG BỘ: Đổi từ BasePrice sang Price
+                MainImage = p.MainImage,  // ✅ ĐÃ ĐỒNG BỘ: Đổi từ ImageUrl sang MainImage
                 Category = p.Category,
+                Gender = p.Gender,        // Gán thêm trường Gender nếu DTO có yêu cầu
                 IsActive = true,
                 SoldCount = p.SoldCount,
                 AverageRating = p.AverageRating,
                 ReviewCount = p.ReviewCount,
                 IsInWishlist = wishlistIds.Contains(p.ProductId),
-
-                // ✅ SỬA LỖI: Gán thêm Discount từ Entity sang DTO để Front-end hiển thị tag giảm giá
                 Discount = p.Discount
             };
         }
@@ -386,15 +386,54 @@ namespace ClothingShop.Business.Services
             ProductId = p.ProductId,
             Name = p.Name,
             Description = p.Description,
-            BasePrice = p.Price,
-            ImageUrl = p.MainImage,
+            Policy = p.Policy,
             Category = p.Category,
+            Gender = p.Gender,
             SoldCount = p.SoldCount,
             AverageRating = p.AverageRating,
             ReviewCount = p.ReviewCount,
             IsInWishlist = isInWishlist,
-            Discount = p.Discount, // ✅ Đảm bảo đồng bộ trường giảm giá tại chi tiết sản phẩm
-            Images = new List<ProductImageDto> { new ProductImageDto { ImageUrl = p.MainImage, IsMain = true } },
+
+            // Trả về đúng định nghĩa giá gốc để Front-end tự tính finalPrice
+            Price = p.Price,
+            OldPrice = p.Price,
+            Discount = p.Discount ?? 0,
+
+            // Đảm bảo MainImage luôn được gửi đi để tránh bị rơi vào ảnh placeholder lỗi
+            MainImage = p.MainImage,
+
+            Thumbnails = p.Thumbnails != null && p.Thumbnails.Any()
+                ? string.Join(",", p.Thumbnails).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList()
+                : new List<string>(),
+
+            // Tự map dữ liệu Review tường minh, không gọi hàm ngoài
+            Reviews = p.Reviews.Select(r => new ReviewDto
+            {
+                ReviewId = r.ReviewId,
+                ProductId = r.ProductId,
+                UserId = r.UserId,
+                OrderId = r.OrderId,
+                CustomerName = r.CustomerName,
+                Rating = r.Rating,
+                Comment = r.Comment,
+                IsVerifiedPurchase = true,
+                CreatedAt = r.CreatedAt
+            }).ToList(),
+
+            RecentReviews = p.Reviews.OrderByDescending(r => r.CreatedAt).Take(5).Select(r => new ReviewDto
+            {
+                ReviewId = r.ReviewId,
+                ProductId = r.ProductId,
+                UserId = r.UserId,
+                OrderId = r.OrderId,
+                CustomerName = r.CustomerName,
+                Rating = r.Rating,
+                Comment = r.Comment,
+                IsVerifiedPurchase = true,
+                CreatedAt = r.CreatedAt
+            }).ToList(),
+
+            
             Variants = p.Variants.Select(MapVariant).ToList()
         };
 
@@ -404,7 +443,7 @@ namespace ClothingShop.Business.Services
             Color = v.Color,
             Size = v.Size,
             StockQuantity = v.StockQuantity,
-            PriceAdjustment = 0
+            
         };
     }
 }

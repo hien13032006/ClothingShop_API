@@ -1,5 +1,4 @@
 ﻿<!DOCTYPE html>
-
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
@@ -31,7 +30,7 @@
 
             .logo a:hover {
                 color: #ff6b81;
-                text-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* Thêm đổ bóng */
+                text-shadow: 2px 2px 5px rgba(0,0,0,0.2);
             }
 
         .nav-right-section {
@@ -50,9 +49,7 @@
         }
     </style>
 
-    <!--MENU Tiêu đề-->
     <nav class="navbar">
-
         <div class="logo">
             <a href="index.html">Clothing</a>
             <span>|</span><i class="fa-solid fa-cart-shopping"></i>
@@ -69,7 +66,6 @@
                 <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
             </div>
         </div>
-
     </nav>
 
     <main class="cart-container">
@@ -102,6 +98,35 @@
         </div>
     </main>
 
+    <template id="cart-item-template">
+        <div class="cart-item-row" data-index="{index}">
+            <div style="text-align: center;">
+                <input type="checkbox"
+                       class="item-checkbox cart-item-checkbox"
+                       data-product-id="{productId}"
+                       data-variant-id="{variantId}"
+                       onchange="updateTotalPrice()">
+            </div>
+            <div class="cart-item-info">
+                <img src="{itemImg}" alt="{name}" onerror="this.onerror=null; this.src='https://placehold.co/300x400?text=Image+Error';">
+                <p>{name}</p>
+            </div>
+            <div class="cart-item-type">Màu: {color} <br> Size: {size}</div>
+            <div class="qty-control">
+                <button onclick="updateCartQty({index}, -1)">−</button>
+                <span>{quantity}</span>
+                <button onclick="updateCartQty({index}, 1)">+</button>
+            </div>
+            <div class="cart-item-price">
+                {discountRow}
+                <span class="actual-price" style="font-weight:bold; color:red;">{subtotal}</span>
+            </div>
+            <div class="cart-item-action">
+                <span class="btn-delete" onclick="removeFromCart({index})">Xóa</span>
+            </div>
+        </div>
+    </template>
+
     <div id="custom-alert" class="modal-overlay">
         <div class="modal-box">
             <h3>Thông báo</h3>
@@ -110,7 +135,6 @@
         </div>
     </div>
 
-    <!--Footer-->
     <footer class="main-footer">
         <div class="footer-container">
             <div class="footer-col">
@@ -141,6 +165,5 @@
     </footer>
 
     <script src="web.js"></script>
-
 </body>
 </html>

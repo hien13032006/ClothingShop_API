@@ -51,5 +51,13 @@ namespace ClothingShop.API.Controllers
             var result = await _promoService.TogglePromotionAsync(id);
             return result.Success ? Ok(result) : NotFound(result);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetActivePromotions()
+        {
+            // Gọi Service để lấy tất cả, hoặc bạn có thể viết hàm lấy riêng các mã IsActive == true
+            var result = await _promoService.GetAllPromotionsAsync();
+            return Ok(result);
+        }
     }
 }

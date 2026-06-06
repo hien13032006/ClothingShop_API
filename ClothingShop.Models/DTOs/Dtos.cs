@@ -142,12 +142,15 @@ namespace ClothingShop.Models.DTOs
     {
         public int ProductId { get; set; }
         public string Name { get; set; } = string.Empty;
-        public decimal BasePrice { get; set; }
-        public decimal? OldPrice { get; set; } // Thêm để hiển thị giá cũ
-        public int? Discount { get; set; }     // Thêm để hiển thị % giảm giá
-        public string? ImageUrl { get; set; }
-        public string? Category { get; set; }  // Đổi từ CategoryName sang Category cho khớp Model
-        public string? Gender { get; set; }    // Thêm trường giới tính
+
+        // ĐỔI TỪ BasePrice THÀNH Price
+        public decimal Price { get; set; }
+        public int? Discount { get; set; }
+
+        // ĐỔI TỪ ImageUrl THÀNH MainImage
+        public string? MainImage { get; set; }
+        public string? Category { get; set; }
+        public string? Gender { get; set; }
         public bool IsActive { get; set; }
         public int SoldCount { get; set; }
         public double AverageRating { get; set; }
@@ -160,19 +163,25 @@ namespace ClothingShop.Models.DTOs
         public int ProductId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public decimal BasePrice { get; set; }
-        public decimal? OldPrice { get; set; } // Thêm trường giá cũ
-        public int? Discount { get; set; }     // Thêm trường giảm giá
-        public string? ImageUrl { get; set; }
-        public List<ProductImageDto> Images { get; set; } = new();
-        public string? Category { get; set; }  // Đổi từ CategoryName sang Category
-        public string? Gender { get; set; }    // Thêm trường giới tính
+        public string? Policy { get; set; }
+
+        // ĐỔI TỪ BasePrice THÀNH Price
+        public decimal Price { get; set; }
+        public decimal? OldPrice { get; set; }
+        public int? Discount { get; set; }
+
+        // ĐỔI TỪ ImageUrl THÀNH MainImage
+        public string? MainImage { get; set; }
+        public List<string> Thumbnails { get; set; } = new List<string>();
+        public string? Category { get; set; }
+        public string? Gender { get; set; }
         public int SoldCount { get; set; }
         public double AverageRating { get; set; }
         public int ReviewCount { get; set; }
         public bool IsInWishlist { get; set; }
         public List<VariantDto> Variants { get; set; } = new();
         public List<ReviewDto> RecentReviews { get; set; } = new();
+        public List<ReviewDto> Reviews { get; set; } = new();
     }
 
     public class ProductImageDto
@@ -189,9 +198,7 @@ namespace ClothingShop.Models.DTOs
         public string? Color { get; set; }
         public string? Size { get; set; }
         public int StockQuantity { get; set; }
-        // Giữ lại PriceAdjustment và ActualPrice bằng 0 hoặc bằng BasePrice ở tầng Service để không lỗi Front-end cũ
-        public decimal PriceAdjustment { get; set; } = 0;
-        public decimal ActualPrice { get; set; } = 0;
+
     }
 
     public class CreateProductDto
@@ -201,6 +208,7 @@ namespace ClothingShop.Models.DTOs
         [Required] public string Gender { get; set; } = string.Empty;   // Thêm trường bắt buộc
         public int? Discount { get; set; }                             // Thêm trường giảm giá
         public string? Description { get; set; }
+        public string? Policy { get; set; }
         [Required][Range(0.01, double.MaxValue)] public decimal BasePrice { get; set; }
         public decimal? OldPrice { get; set; }
         [MaxLength(500)] public string? ImageUrl { get; set; }
