@@ -314,6 +314,7 @@ namespace ClothingShop.Models.DTOs
         public string? Size { get; set; }
         public string? ImageUrl { get; set; }
         public decimal UnitPrice { get; set; }
+        public decimal Discount { get; set; }
         public int Quantity { get; set; }
         public decimal Subtotal { get; set; }
         public int StockQuantity { get; set; }

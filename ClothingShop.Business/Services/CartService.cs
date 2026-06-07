@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using ClothingShop.Data.Interfaces;
 using ClothingShop.Models;
 using ClothingShop.Models.DTOs;
@@ -32,10 +36,12 @@ namespace ClothingShop.Business.Services
 
         public async Task<ApiResponse<CartSummaryDto>> AddToCartAsync(string userId, AddToCartDto dto)
         {
+            if (dto.Quantity <= 0) return ApiResponse<CartSummaryDto>.Fail("Số lượng thêm phải lớn hơn 0");
+
             var variant = await _productRepo.GetVariantAsync(dto.VariantId);
             if (variant == null) return ApiResponse<CartSummaryDto>.Fail("Sản phẩm không tồn tại");
             if (variant.StockQuantity < dto.Quantity)
-                return ApiResponse<CartSummaryDto>.Fail($"Chỉ còn {variant.StockQuantity} sản phẩm");
+                return ApiResponse<CartSummaryDto>.Fail($"Chỉ còn {variant.StockQuantity} sản phẩm trong kho");
 
             var existing = await _cartRepo.GetCartItemAsync(userId, dto.VariantId);
             if (existing != null)
@@ -43,7 +49,8 @@ namespace ClothingShop.Business.Services
                 var newQty = existing.Quantity + dto.Quantity;
                 if (newQty > variant.StockQuantity)
                     return ApiResponse<CartSummaryDto>.Fail(
-                        $"Giỏ hàng đã có {existing.Quantity}, tồn kho chỉ còn {variant.StockQuantity}");
+                        $"Giỏ hàng của bạn đã có {existing.Quantity} sản phẩm này. Không thể thêm tiếp vì vượt quá số lượng tồn kho là {variant.StockQuantity}!");
+
                 existing.Quantity = newQty;
                 await _cartRepo.UpdateAsync(existing);
             }
@@ -54,7 +61,7 @@ namespace ClothingShop.Business.Services
                     UserId = userId,
                     VariantId = dto.VariantId,
                     Quantity = dto.Quantity,
-                    AddedAt = DateTime.Now
+                    AddedAt = DateTime.UtcNow // 🌟 SỬA LỖI 1: Đồng bộ UtcNow với cấu trúc thực tế của Model
                 });
             }
 
@@ -65,30 +72,63 @@ namespace ClothingShop.Business.Services
 
         public async Task<ApiResponse<CartSummaryDto>> UpdateQuantityAsync(string userId, UpdateCartDto dto)
         {
+            // 🌟 XỬ LÝ KHI SỐ LƯỢNG GIẢM VỀ <= 0: Tự động chuyển đổi sang nghiệp vụ Xóa sản phẩm
+            if (dto.Quantity <= 0)
+            {
+                // Sử dụng thuộc tính ID của dòng sản phẩm (Hãy đảm bảo dto.CartId chính là ID của CartItem)
+                var deleteResult = await RemoveItemAsync(userId, dto.CartId);
+                if (!deleteResult.Success)
+                    return ApiResponse<CartSummaryDto>.Fail(deleteResult.Message);
+
+                // Lấy lại giỏ hàng sau khi đã xóa mục kia
+                var updatedCart = await _cartRepo.GetCartByUserAsync(userId);
+
+                // PHÒNG VỆ: Nếu đây là sản phẩm cuối cùng và giỏ hàng trống (updatedCart bị null)
+                if (updatedCart == null)
+                {
+                    return ApiResponse<CartSummaryDto>.Ok(new CartSummaryDto(), "Đã gỡ sản phẩm cuối cùng. Giỏ hàng hiện đang trống.");
+                }
+
+                return ApiResponse<CartSummaryDto>.Ok(BuildSummary(updatedCart), "Đã gỡ sản phẩm khỏi giỏ hàng");
+            }
+
+            // Lấy thông tin dòng sản phẩm trong giỏ hàng
             var item = await _cartRepo.GetByIdAsync(dto.CartId);
+
+            // Nếu bảng CartItem của bạn không có trường UserId trực tiếp, hãy thay bằng item.Cart.UserId != userId
             if (item == null || item.UserId != userId)
-                return ApiResponse<CartSummaryDto>.Fail("Không tìm thấy sản phẩm trong giỏ");
+                return ApiResponse<CartSummaryDto>.Fail("Không tìm thấy sản phẩm hợp lệ trong giỏ hàng của bạn");
 
+            // Lấy thông tin biến thể sản phẩm để kiểm tra tồn kho thời gian thực
             var variant = await _productRepo.GetVariantAsync(item.VariantId);
-            if (variant == null || variant.StockQuantity < dto.Quantity)
-                return ApiResponse<CartSummaryDto>.Fail($"Tồn kho không đủ (còn {variant?.StockQuantity ?? 0})");
+            if (variant == null)
+                return ApiResponse<CartSummaryDto>.Fail("Biến thể sản phẩm không còn tồn tại trên hệ thống");
 
+            // Ngăn chặn nếu số lượng yêu cầu lớn hơn số lượng có sẵn trong kho
+            if (variant.StockQuantity < dto.Quantity)
+                return ApiResponse<CartSummaryDto>.Fail($"Số lượng bạn chọn vượt quá số lượng hàng có sẵn trong kho (Hiện còn: {variant.StockQuantity})");
+
+            // Cập nhật số lượng mới và lưu xuống database
             item.Quantity = dto.Quantity;
             await _cartRepo.UpdateAsync(item);
             await _cartRepo.SaveChangesAsync();
 
+            // Lấy lại cấu trúc giỏ hàng mới nhất để BuildSummary trả về cho Frontend hiển thị tổng tiền mới
             var cart = await _cartRepo.GetCartByUserAsync(userId);
-            return ApiResponse<CartSummaryDto>.Ok(BuildSummary(cart), "Cập nhật giỏ hàng thành công");
+            return ApiResponse<CartSummaryDto>.Ok(BuildSummary(cart), "Cập nhật số lượng giỏ hàng thành công");
         }
 
         public async Task<ApiResponse<string>> RemoveItemAsync(string userId, int cartId)
         {
             var item = await _cartRepo.GetByIdAsync(cartId);
+
             if (item == null || item.UserId != userId)
                 return ApiResponse<string>.Fail("Không tìm thấy sản phẩm trong giỏ");
+
             await _cartRepo.DeleteAsync(item);
             await _cartRepo.SaveChangesAsync();
-            return ApiResponse<string>.Ok("OK", "Đã xóa khỏi giỏ hàng");
+
+            return ApiResponse<string>.Ok("OK", "Đã xóa sản phẩm khỏi giỏ hàng thành công");
         }
 
         public async Task<ApiResponse<string>> ClearCartAsync(string userId)
@@ -100,8 +140,14 @@ namespace ClothingShop.Business.Services
         private static CartSummaryDto BuildSummary(IEnumerable<CartItem> items)
         {
             var list = items.Select(ci => {
-                // Lấy giá gốc từ bảng Product thông qua liên kết thực thể điều hướng
-                decimal unitPrice = ci.Variant?.Product?.Price ?? 0;
+                decimal originalPrice = ci.Variant?.Product?.Price ?? 0;
+                // Giả định bảng Product của bạn có cột Discount (kiểu int hoặc decimal ví dụ: 10 nghĩa là giảm 10%)
+                decimal discountPercent = ci.Variant?.Product?.Discount ?? 0;
+
+                // 🌟 SỬA LỖI 2: Tính giá thực tế sau khi áp dụng phần trăm giảm giá của sản phẩm giống hệt Frontend
+                decimal finalPrice = discountPercent > 0
+                    ? originalPrice * (1 - (discountPercent / 100))
+                    : originalPrice;
 
                 return new CartItemDto
                 {
@@ -110,11 +156,11 @@ namespace ClothingShop.Business.Services
                     ProductName = ci.Variant?.Product?.Name,
                     Color = ci.Variant?.Color,
                     Size = ci.Variant?.Size,
-                    // Sửa 'item' thành 'ci', lấy ảnh MainImage từ cấu trúc Model Product mới của bạn
                     ImageUrl = ci.Variant?.Product?.MainImage ?? "default-image.jpg",
-                    UnitPrice = unitPrice, // Khớp đúng tên trường định nghĩa trong CartItemDto
+                    UnitPrice = originalPrice, // Giá gốc sản phẩm
+                    Discount = discountPercent, // Truyền kèm tỉ lệ giảm giá sang DTO để Frontend render thẻ {discountRow}
                     Quantity = ci.Quantity,
-                    Subtotal = unitPrice * ci.Quantity, // Tính dựa trên giá gốc sản phẩm nhân số lượng
+                    Subtotal = finalPrice * ci.Quantity, // Thành tiền tính dựa trên GIÁ ĐÃ GIẢM
                     StockQuantity = ci.Variant?.StockQuantity ?? 0
                 };
             }).ToList();

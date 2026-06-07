@@ -81,7 +81,7 @@
 
         <div class="cart-footer">
             <div class="voucher-section">
-                <a href="#" class="voucher-link">Chọn hoặc nhập mã</a>
+                <a href="javascript:void(0)" class="voucher-link" onclick="openVoucherModal()">Chọn hoặc nhập mã</a>
             </div>
             <div class="checkout-bar">
                 <div class="checkout-left">
@@ -99,42 +99,62 @@
     </main>
 
     <template id="cart-item-template">
-        <div class="cart-item-row" data-index="{index}">
+        <div class="cart-item-row" data-id="{cartItemId}">
             <div style="text-align: center;">
                 <input type="checkbox"
                        class="item-checkbox cart-item-checkbox"
                        data-product-id="{productId}"
                        data-variant-id="{variantId}"
+                       data-cart-item-id="{cartItemId}"
                        onchange="updateTotalPrice()">
             </div>
             <div class="cart-item-info">
-                <img src="{itemImg}" alt="{name}" onerror="this.onerror=null; this.src='https://placehold.co/300x400?text=Image+Error';">
+                <img src="{itemImg}" alt="{name}" onerror="this.onerror=null; this.src='https://placehold.co/300x400?text=No+Image';">
                 <p>{name}</p>
             </div>
             <div class="cart-item-type">Màu: {color} <br> Size: {size}</div>
             <div class="qty-control">
-                <button onclick="updateCartQty({index}, -1)">−</button>
+                <button onclick="updateCartQty({cartItemId}, -1)">−</button>
                 <span>{quantity}</span>
-                <button onclick="updateCartQty({index}, 1)">+</button>
+                <button onclick="updateCartQty({cartItemId}, 1)">+</button>
             </div>
             <div class="cart-item-price">
                 {discountRow}
                 <span class="actual-price" style="font-weight:bold; color:red;">{subtotal}</span>
             </div>
             <div class="cart-item-action">
-                <span class="btn-delete" onclick="removeFromCart({index})">Xóa</span>
+                <span class="btn-delete" onclick="removeFromCart({cartItemId})">Xóa</span>
             </div>
         </div>
     </template>
 
     <div id="custom-alert" class="modal-overlay">
         <div class="modal-box">
-            <h3>Thông báo</h3>
-            <p id="modal-message">Vui lòng chọn ít nhất 1 sản phẩm để tiếp tục thanh toán!</p>
+            <h3 id="modal-title">Thông báo</h3> <p id="modal-message">Vui lòng chọn ít nhất 1 sản phẩm để tiếp tục thanh toán!</p>
             <button class="btn-confirm" onclick="closeModal()">Đồng ý</button>
         </div>
     </div>
 
+    <div id="voucher-modal" class="voucher-modal" style="display: none;">
+        <div class="voucher-modal-content">
+            <div class="voucher-modal-header">
+                <h3>Chọn Khuyến Mãi</h3>
+                <span class="close-modal-btn" onclick="closeVoucherModal()">&times;</span>
+            </div>
+
+            <div class="voucher-input-row">
+                <input type="text" id="manual-voucher-code" placeholder="Nhập mã giảm giá của bạn...">
+                <button onclick="applyManualVoucher()">Áp dụng</button>
+            </div>
+
+            <div id="modal-voucher-list" class="modal-voucher-list">
+            </div>
+        </div>
+
+       
+    </div>
+
+    <!--Footer-->
     <footer class="main-footer">
         <div class="footer-container">
             <div class="footer-col">

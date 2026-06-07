@@ -89,3 +89,240 @@
 }
 
 .btn-save:hover { background-color: #fb5a70; }
+
+/* Phân đoạn Sổ địa chỉ */
+.address-section {
+    margin-top: 40px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.address-header-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+    .address-header-box h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+    }
+
+.btn-add-address {
+    padding: 8px 14px;
+    background: #ff4757;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+    .btn-add-address:hover {
+        background: #ee3746;
+    }
+
+/* Từng dòng địa chỉ trong danh sách */
+.address-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background: #fafafa;
+}
+
+.address-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .address-meta-row strong {
+        color: #2f3542;
+        font-size: 15px;
+    }
+
+    .address-meta-row .phone-split {
+        color: #747d8c;
+        font-size: 14px;
+    }
+
+.address-type-tag {
+    font-size: 11px;
+    padding: 1px 6px;
+    border: 1px solid #ff4757;
+    color: #ff4757;
+    border-radius: 3px;
+}
+
+.address-detail-text {
+    color: #57606f;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+.default-badge-container {
+    margin-top: 6px;
+}
+
+.default-badge {
+    background: #ff4757;
+    color: white;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-weight: bold;
+}
+
+/* Các nút hành động bên phải */
+.address-actions-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.btn-delete-address {
+    background: transparent;
+    color: #ff4757;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-set-default {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.2s;
+}
+
+    .btn-set-default:hover {
+        background: #f1f2f6;
+        color: #333;
+    }
+
+/* Cấu trúc Modal Overlay và Hộp thoại */
+.modal-overlay {
+    display: none; /* Điều khiển ẩn hiện bằng JS (flex) */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-box {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    width: 450px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    animation: fadeInModal 0.3s ease-out;
+}
+
+@keyframes fadeInModal {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-box h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.modal-form-group {
+    margin-bottom: 15px;
+}
+
+    .modal-form-group input[type="text"],
+    .modal-form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    .modal-form-group textarea {
+        height: 80px;
+        resize: none;
+    }
+
+    .modal-form-group label.radio-label-title {
+        font-size: 14px;
+        color: #555;
+        margin-right: 15px;
+    }
+
+    .modal-form-group .radio-options {
+        display: inline-block;
+    }
+
+        .modal-form-group .radio-options label {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+    .modal-form-group .checkbox-label {
+        font-size: 14px;
+        color: #555;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+/* Các nút trong chân Modal */
+.modal-actions-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-modal-close {
+    padding: 8px 16px;
+    background: #f1f2f6;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+}
+
+.btn-modal-submit {
+    padding: 8px 16px;
+    background: #2ed573;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+    .btn-modal-submit:hover {
+        background: #26af5f;
+    }

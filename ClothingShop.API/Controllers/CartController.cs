@@ -29,16 +29,16 @@ namespace ClothingShop.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>POST /api/cart</summary>
-        [HttpPost]
+        /// <summary>POST /api/cart/add</summary>
+        [HttpPost("add")] 
         public async Task<IActionResult> AddToCart([FromBody] AddToCartDto dto)
         {
             var result = await _cartService.AddToCartAsync(GetUserId(), dto);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        /// <summary>PUT /api/cart</summary>
-        [HttpPut]
+        /// <summary>PUT /api/cart/update</summary>
+        [HttpPut("update")] 
         public async Task<IActionResult> UpdateQuantity([FromBody] UpdateCartDto dto)
         {
             var result = await _cartService.UpdateQuantityAsync(GetUserId(), dto);
@@ -46,10 +46,10 @@ namespace ClothingShop.API.Controllers
         }
 
         /// <summary>DELETE /api/cart/{cartId}</summary>
-        [HttpDelete("{cartId}")]
-        public async Task<IActionResult> RemoveItem(int cartId)
+        [HttpDelete("{cartItemId}")]
+        public async Task<IActionResult> RemoveItem(int cartItemId)
         {
-            var result = await _cartService.RemoveItemAsync(GetUserId(), cartId);
+            var result = await _cartService.RemoveItemAsync(GetUserId(), cartItemId);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -60,5 +60,7 @@ namespace ClothingShop.API.Controllers
             var result = await _cartService.ClearCartAsync(GetUserId());
             return Ok(result);
         }
+
+
     }
 }

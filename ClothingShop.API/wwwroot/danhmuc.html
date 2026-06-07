@@ -115,6 +115,45 @@
         </div>
     </main>
 
+    <div id="quick-variant-modal" class="q-modal">
+        <div class="q-modal-content">
+            <span class="q-close-btn" onclick="closeQuickVariantModal()">&times;</span>
+            <div class="q-product-brief">
+                <img id="q-modal-img" src="" alt="Product Image">
+                <div>
+                    <h3 id="q-modal-name">Tên sản phẩm</h3>
+                    <p id="q-modal-price" style="color: red; font-weight: bold;">0đ</p>
+                </div>
+            </div>
+
+            <div class="q-variant-section">
+                <label>Chọn kích cỡ / phân loại:</label>
+                <div id="q-variant-list" class="q-variant-options">
+                </div>
+            </div>
+
+            <div class="q-quantity-section">
+                <label>Số lượng:</label>
+                <input type="number" id="q-modal-qty" value="1" min="1" style="width: 60px; padding: 5px; text-align: center;">
+            </div>
+
+            <button id="q-modal-submit-btn" class="q-submit-btn">Xác nhận</button>
+        </div>
+    </div>
+
+    <div id="cart-toast" class="cart-toast">
+        <div class="toast-content">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Đã thêm sản phẩm vào giỏ hàng!</span>
+        </div>
+    </div>
+
+    <div id="custom-alert" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="modal-title">Thông báo</h3> <p id="modal-message">Vui lòng chọn ít nhất 1 sản phẩm để tiếp tục thanh toán!</p>
+            <button class="btn-confirm" onclick="closeModal()">Đồng ý</button>
+        </div>
+    </div>
 
     <!--Footer-->
     <footer class="main-footer">
