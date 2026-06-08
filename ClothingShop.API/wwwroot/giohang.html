@@ -57,14 +57,22 @@
 
         <div class="nav-right-section">
             <div class="nav-icons">
-                <a href="taikhoan.html" class="icon-item"><i class="fa-regular fa-user"></i></a>
-                <a href="#" class="icon-item"><i class="fa-regular fa-bell"></i></a>
+                <div class="dropdown profile-dropdown">
+                    <a href="javascript:void(0)" class="icon-item">
+                        <i class="fa-regular fa-user"></i>
+                    </a>
+                    <ul class="dropdown-content profile-menu">
+                        <li><a href="profile.html"><i class="fa-solid fa-user-gear"></i> Tài khoản của tôi</a></li>
+                        <li><a href="donhang_KH.html"><i class="fa-solid fa-box-open"></i> Đơn mua</a></li>
+                        <li>
+                            <a href="javascript:void(0)" onclick="logout()">
+                                <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
 
-            <div class="search-box">
-                <input type="text" placeholder="Tìm kiếm...">
-                <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-            </div>
         </div>
     </nav>
 
@@ -80,9 +88,6 @@
         <div id="cart-items-list"></div>
 
         <div class="cart-footer">
-            <div class="voucher-section">
-                <a href="javascript:void(0)" class="voucher-link" onclick="openVoucherModal()">Chọn hoặc nhập mã</a>
-            </div>
             <div class="checkout-bar">
                 <div class="checkout-left">
                     <input type="checkbox" id="check-all-bottom">
@@ -133,25 +138,6 @@
             <h3 id="modal-title">Thông báo</h3> <p id="modal-message">Vui lòng chọn ít nhất 1 sản phẩm để tiếp tục thanh toán!</p>
             <button class="btn-confirm" onclick="closeModal()">Đồng ý</button>
         </div>
-    </div>
-
-    <div id="voucher-modal" class="voucher-modal" style="display: none;">
-        <div class="voucher-modal-content">
-            <div class="voucher-modal-header">
-                <h3>Chọn Khuyến Mãi</h3>
-                <span class="close-modal-btn" onclick="closeVoucherModal()">&times;</span>
-            </div>
-
-            <div class="voucher-input-row">
-                <input type="text" id="manual-voucher-code" placeholder="Nhập mã giảm giá của bạn...">
-                <button onclick="applyManualVoucher()">Áp dụng</button>
-            </div>
-
-            <div id="modal-voucher-list" class="modal-voucher-list">
-            </div>
-        </div>
-
-       
     </div>
 
     <!--Footer-->

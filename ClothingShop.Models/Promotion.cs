@@ -33,6 +33,11 @@ namespace ClothingShop.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        public int TotalUsageLimit { get; set; } = 100; // Tổng số lượt được dùng
+        public int UsedCount { get; set; } = 0; // Số lượt đã dùng thực tế
+                                                // Phương thức kiểm tra lượt dùng còn lại
+        public bool HasUsageLeft() => UsedCount < TotalUsageLimit;
+
         /// <summary>
         /// Kiểm tra xem mã giảm giá có hợp lệ ở thời điểm hiện tại hay không
         /// </summary>

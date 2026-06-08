@@ -40,6 +40,50 @@
     text-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* Thêm đổ bóng */
 }
 
+.address-content {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.btn-change-addr {
+    background: none;
+    border: 1px solid #ff6b81;
+    color: #ff6b81;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.btn-save {
+    background: #2ed573;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: #a4b0be;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#address-form-box input {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
 .checkout-container {
     max-width: 1100px;
     margin: 30px auto;

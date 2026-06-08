@@ -63,6 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         initProductPages();
     }
     else if (path.includes("giohang.html")) {
+        localStorage.removeItem('checkout_voucher');
         renderCart();
     }
 });
@@ -1419,20 +1420,14 @@ async function checkout() {
                 cartItemId: item.cartId,
                 productId: item.productId,
                 variantId: item.variantId,
-                quantity: item.quantity, // Lấy chính xác quantity từ DB
-                subtotal: item.subtotal  // Lấy giá đã tính từ API
+                quantity: item.quantity, 
+                subtotal: item.subtotal  
             });
         }
     });
 
     // Lưu mảng này vào LocalStorage
     localStorage.setItem("checkout_data", JSON.stringify(selectedItems));
-
-    // Lưu thêm thông tin Voucher nếu có để trang thanh toán áp dụng
-    if (appliedVoucher) {
-        localStorage.setItem("checkout_voucher", JSON.stringify(appliedVoucher));
-    }
-
     window.location.href = "checkout.html";
 }
 

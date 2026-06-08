@@ -14,7 +14,7 @@ namespace ClothingShop.Business.Services
         Task<ApiResponse<string>> CancelOrderAsync(string orderId, string userId);
         Task<ApiResponse<PagedResult<OrderDto>>> GetAllOrdersAsync(OrderFilterDto filter);
         Task<ApiResponse<OrderDto>> UpdateOrderStatusAsync(string orderId, UpdateOrderStatusDto dto);
-        Task<ApiResponse<OrderCalculationDto>> CalculateOrderAsync(List<CartItemDto> items);
+        Task<ApiResponse<OrderCalculationDto>> CalculateOrderAsync(List<CartItemDto> items, string? promoCode = null);
     }
 
     public class OrderService : IOrderService
@@ -47,140 +47,146 @@ namespace ClothingShop.Business.Services
 
         public async Task<ApiResponse<OrderDto>> CreateOrderAsync(string userId, CreateOrderDto dto)
         {
-            if (!dto.Items.Any())
-                return ApiResponse<OrderDto>.Fail("Đơn hàng không có sản phẩm");
+            _context.ChangeTracker.Clear();
+            // 1. Kiểm tra cơ bản (Validation)
+            if (!dto.Items.Any()) return ApiResponse<OrderDto>.Fail("Đơn hàng không có sản phẩm");
 
-            var address = await _context.Addresses
-                .FirstOrDefaultAsync(a => a.AddressId == dto.AddressId && a.UserId == userId);
-            if (address == null)
-                return ApiResponse<OrderDto>.Fail("Địa chỉ giao hàng không hợp lệ");
+            var strategy = _context.Database.CreateExecutionStrategy();
 
-            decimal totalPrice = 0;
-            var detailList = new List<OrderDetail>();
-
-            foreach (var item in dto.Items)
+            return await strategy.ExecuteAsync(async () =>
             {
-                var variant = await _productRepo.GetVariantAsync(item.VariantId);
-                if (variant == null)
-                    return ApiResponse<OrderDto>.Fail($"Không tìm thấy sản phẩm (variant_id={item.VariantId})");
-
-                // ĐmanagerẮ SỬA: Loại bỏ kiểm tra !variant.Product.IsActive vì trường này không còn trong bảng Product
-                if (variant.Product == null)
-                    return ApiResponse<OrderDto>.Fail($"Sản phẩm liên kết với biến thể không tồn tại");
-
-                if (variant.StockQuantity < item.Quantity)
-                    return ApiResponse<OrderDto>.Fail(
-                        $"'{variant.Product.Name}' ({variant.Color}/{variant.Size}) chỉ còn {variant.StockQuantity}");
-
-                // ĐC SỬA: Thay variant.ActualPrice bằng giá gốc variant.Product.Price
-                decimal itemPrice = variant.Product.Price;
-
-                totalPrice += itemPrice * item.Quantity;
-                detailList.Add(new OrderDetail
+                await using var tx = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    VariantId = item.VariantId,
-                    Quantity = item.Quantity,
-                    UnitPrice = itemPrice
-                });
-            }
+                    // 2. Lấy thông tin khách hàng & địa chỉ
+                    var customer = await _customerRepo.GetByIdAsync(userId);
+                    _context.Entry(customer).State = EntityState.Detached;
+                    var address = await _context.Addresses
+                        .FirstOrDefaultAsync(a => a.AddressId == dto.AddressId && a.UserId == userId);
+                    _context.Entry(address).State = EntityState.Detached;
 
-            var customer = await _customerRepo.GetByIdAsync(userId);
-            if (customer == null) return ApiResponse<OrderDto>.Fail("Không tìm thấy tài khoản");
+                    if (customer == null) return ApiResponse<OrderDto>.Fail("Không tìm thấy thông tin khách hàng");
+                    if (address == null) return ApiResponse<OrderDto>.Fail("Địa chỉ giao hàng không hợp lệ");
 
-            decimal memberDiscount = CalcMemberDiscount(customer.MembershipLevel, totalPrice);
-            decimal promoDiscount = 0;
+                    // 3. Tính toán giá trị & kiểm tra tồn kho
+                    decimal subTotal = 0;
+                    var orderId = await _orderRepo.GenerateNextOrderIdAsync(); // Tạo ID từ Repo
+                    var orderDetails = new List<OrderDetail>();
 
-            if (!string.IsNullOrWhiteSpace(dto.PromotionCode))
-            {
-                var promo = await _promoRepo.GetByCodeAsync(dto.PromotionCode.ToUpper());
-                if (promo == null)
-                    return ApiResponse<OrderDto>.Fail("Mã khuyến mãi không hợp lệ hoặc đã hết hạn");
-                promoDiscount = promo.CalcDiscount(totalPrice);
-            }
-
-            var orderId = await _orderRepo.GenerateNextOrderIdAsync();
-            var order = new Order
-            {
-                OrderId = orderId,
-                UserId = userId,
-                OrderDate = DateTime.Now,
-                TotalPrice = totalPrice,
-                DiscountAmount = memberDiscount + promoDiscount,
-                FinalPrice = totalPrice - (memberDiscount + promoDiscount),
-                ShippingMethod = dto.ShippingMethod,
-                PaymentMethod = dto.PaymentMethod,
-                Status = "Chờ xác nhận",
-                OrderDetails = detailList
-            };
-
-            var payment = new Payment
-            {
-                OrderId = orderId,
-                PaymentMethod = dto.PaymentMethod,
-                PaymentStatus = dto.PaymentMethod == "Thanh toán online" ? "Đang xử lý" : "Chưa thanh toán",
-                AmountPaid = totalPrice - order.DiscountAmount,
-                PaymentDate = DateTime.Now
-            };
-
-            await using var tx = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                await _orderRepo.AddAsync(order);
-                await _context.Payments.AddAsync(payment);
-
-                foreach (var item in dto.Items)
-                {
-                    await _productRepo.UpdateStockAsync(item.VariantId, -item.Quantity);
-
-                    // Tăng SoldCount
-                    var v = await _context.ProductVariants
-                        .Include(x => x.Product)
-                        .FirstAsync(x => x.VariantId == item.VariantId);
-                    if (v.Product != null) v.Product.SoldCount += item.Quantity;
-                }
-
-                await _cartRepo.ClearCartAsync(userId);
-
-                await _orderRepo.AddTrackingAsync(new OrderTracking
-                {
-                    OrderId = orderId,
-                    StatusUpdate = "Đơn hàng đã đặt, đang chờ xác nhận",
-                    UpdatedAt = DateTime.Now
-                });
-
-                // Cộng điểm
-                int pointsEarned = (int)((totalPrice - order.DiscountAmount) / 10_000);
-                if (pointsEarned > 0)
-                {
-                    customer.TotalPoints += pointsEarned;
-                    UpdateMembershipLevel(customer);
-                    await _context.PointHistories.AddAsync(new PointHistory
+                    foreach (var item in dto.Items)
                     {
-                        UserId = userId,
+                        var v = await _context.ProductVariants
+                            .Include(x => x.Product)
+                            .FirstOrDefaultAsync(x => x.VariantId == item.VariantId);
+
+                        if (v == null || v.Product == null) throw new Exception("Sản phẩm không tồn tại");
+                        if (v.StockQuantity < item.Quantity) throw new Exception($"Sản phẩm {v.Product.Name} không đủ hàng");
+
+                        decimal unitPrice = v.Product.Price;
+                        subTotal += unitPrice * item.Quantity;
+
+                        // Thêm vào chi tiết đơn hàng
+                        orderDetails.Add(new OrderDetail
+                        {
+                            OrderId = orderId,
+                            VariantId = item.VariantId,
+                            Quantity = item.Quantity,
+                            UnitPrice = unitPrice,
+                            LineTotal = unitPrice * item.Quantity
+                        });
+
+                        // Trừ kho & tăng lượt bán
+                        v.StockQuantity -= item.Quantity;
+                        v.Product.SoldCount += item.Quantity;
+                    }
+
+                    // 4. Xử lý Voucher (Nếu có)
+                    decimal discount = 0;
+                    if (!string.IsNullOrWhiteSpace(dto.PromotionCode))
+                    {
+                        var promo = await _context.Promotions.FirstOrDefaultAsync(p => p.Code == dto.PromotionCode.ToUpper());
+                        if (promo == null || !promo.HasUsageLeft()) throw new Exception("Mã giảm giá không hợp lệ hoặc đã hết lượt dùng");
+
+                        var isUsed = await _context.PromotionUsages.AnyAsync(u => u.UserId == userId && u.PromotionId == promo.PromotionId);
+                        if (isUsed) throw new Exception("Bạn đã sử dụng mã này rồi");
+
+                        discount = promo.CalcDiscount(subTotal);
+                        promo.UsedCount++;
+                        await _context.PromotionUsages.AddAsync(new PromotionUsage
+                        {
+                            UserId = userId,
+                            PromotionId = promo.PromotionId,
+                            OrderId = orderId,
+                            UsedAt = DateTime.UtcNow
+                        });
+                    }
+
+                    // 5. Tạo đối tượng Order
+                    var order = new Order
+                    {
                         OrderId = orderId,
-                        Points = pointsEarned,
-                        Reason = $"Tích điểm từ đơn hàng {orderId}",
-                        CreatedAt = DateTime.Now
-                    });
+                        UserId = userId,
+                        OrderDate = DateTime.Now,
+                        TotalPrice = subTotal,
+                        DiscountAmount = discount,
+                        // Đảm bảo không bao giờ là null và không bao giờ âm
+                        FinalPrice = Math.Max(0, subTotal - discount),
+                        ShippingMethod = dto.ShippingMethod ?? "Standard",
+                        PaymentMethod = dto.PaymentMethod ?? "COD",
+                        Status = "Chờ xác nhận",
+                        OrderDetails = orderDetails // orderDetails phải được khởi tạo ở trên
+                    };
+
+                    // 6. Tích điểm
+                    int points = (int)((subTotal - discount) / 10_000);
+                    if (points > 0)
+                    {
+                        customer.TotalPoints += points;
+                        await _context.PointHistories.AddAsync(new PointHistory { UserId = userId, Points = points, Reason = "Mua hàng", OrderId = orderId });
+                    }
+
+                    // 7. Lưu tất cả
+                    await _context.Orders.AddAsync(order);
+                    await _cartRepo.ClearCartAsync(userId); // Dọn giỏ hàng
+                    foreach (var entry in _context.ChangeTracker.Entries())
+                    {
+                        // Nếu entity không phải là Order hoặc OrderDetail, hãy tách nó ra khỏi sự theo dõi
+                        if (!(entry.Entity is Order || entry.Entity is OrderDetail))
+                        {
+                            entry.State = EntityState.Detached;
+                        }
+                    }
+                    await _context.SaveChangesAsync();      // LƯU TẤT CẢ TẠI ĐÂY
+                    await tx.CommitAsync();
+
+                    // 8. Gửi thông báo & trả về kết quả
+                    await _notifService.CreateAsync(userId, "order_update", "Đặt hàng thành công! 🎉", $"Đơn hàng #{orderId} đã được đặt.", orderId);
+
+                    return ApiResponse<OrderDto>.Ok(new OrderDto { OrderId = orderId }, "Đặt hàng thành công");
                 }
+                catch (Exception ex)
+                {
+                    await tx.RollbackAsync();
 
-                await _customerRepo.UpdateAsync(customer);
-                await _customerRepo.SaveChangesAsync();
-                await tx.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                await tx.RollbackAsync();
-                return ApiResponse<OrderDto>.Fail($"Lỗi khi đặt hàng: {ex.Message}");
-            }
+                    // Ghi log chi tiết nhất có thể
+                    var message = ex.Message;
+                    if (ex.InnerException != null)
+                    {
+                        message += " | Inner: " + ex.InnerException.Message;
+                        // Nếu là lỗi liên quan đến EF, lấy thêm thông tin từ Entries
+                        if (ex is Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+                        {
+                            foreach (var entry in dbEx.Entries)
+                            {
+                                message += $" | Entity bị lỗi: {entry.Metadata.Name}";
+                            }
+                        }
+                    }
 
-            await _notifService.CreateAsync(userId, "order_update",
-                "Đặt hàng thành công! 🎉",
-                $"Đơn hàng #{orderId} đã được đặt. Chúng tôi sẽ xử lý sớm nhất.",
-                orderId);
-
-            var created = await _orderRepo.GetWithDetailsAsync(orderId);
-            return ApiResponse<OrderDto>.Ok(MapToDto(created!), "Đặt hàng thành công");
+                    Console.WriteLine($"[LỖI ĐẶT HÀNG]: {message}");
+                    return ApiResponse<OrderDto>.Fail(message);
+                }
+            });
         }
 
         public async Task<ApiResponse<OrderDto>> GetOrderDetailAsync(string orderId, string userId)
@@ -305,7 +311,7 @@ namespace ClothingShop.Business.Services
             });
         }
 
-        public async Task<ApiResponse<OrderCalculationDto>> CalculateOrderAsync(List<CartItemDto> items)
+        public async Task<ApiResponse<OrderCalculationDto>> CalculateOrderAsync(List<CartItemDto> items, string? promoCode = null)
         {
             decimal subTotal = 0;
             // 1. Khai báo biến discount ở đây
@@ -332,6 +338,16 @@ namespace ClothingShop.Business.Services
                     Size = variant.Size,
                     ImageUrl = variant.Product.MainImage
                 });
+            }
+
+            if (!string.IsNullOrWhiteSpace(promoCode))
+            {
+                var promo = await _promoRepo.GetByCodeAsync(promoCode.ToUpper());
+                // Kiểm tra xem promo có hợp lệ với subTotal hiện tại không
+                if (promo != null && promo.IsValid(subTotal))
+                {
+                    discount = promo.CalcDiscount(subTotal);
+                }
             }
 
             // 2. Bây giờ biến 'discount' đã tồn tại và có thể sử dụng

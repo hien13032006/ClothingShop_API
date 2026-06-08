@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using ClothingShop.Business.Services;
 using ClothingShop.Models.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ClothingShop.API.Controllers
 {
@@ -55,9 +56,19 @@ namespace ClothingShop.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetActivePromotions()
         {
-            // Gọi Service để lấy tất cả, hoặc bạn có thể viết hàm lấy riêng các mã IsActive == true
             var result = await _promoService.GetAllPromotionsAsync();
-            return Ok(result);
+            // Giả sử result.Data là danh sách các promotion
+            var activePromos = result.Data.Where(p => p.IsActive && p.EndDate > DateTime.Now);
+            return Ok(activePromos);
+        }
+
+        [HttpGet("available")]
+        [Authorize]
+        public async Task<IActionResult> GetAvailablePromotions()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var promotions = await _promoService.GetAvailablePromotionsForUserAsync(userId);
+            return Ok(promotions);
         }
     }
 }

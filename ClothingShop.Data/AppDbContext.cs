@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using ClothingShop.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace ClothingShop.Data
 {
@@ -23,6 +24,7 @@ namespace ClothingShop.Data
 
         // ── Promo / Shipping ──
         public DbSet<Promotion> Promotions { get; set; }
+        public DbSet<PromotionUsage> PromotionUsages { get; set; }
         public DbSet<ShippingFee> ShippingFees { get; set; }
 
         // ── Membership ──
@@ -98,7 +100,11 @@ namespace ClothingShop.Data
                 e.Property(o => o.OrderDate).HasColumnName("order_date").HasDefaultValueSql("GETDATE()");
                 e.Property(o => o.TotalPrice).HasColumnName("total_price").HasColumnType("decimal(18,2)").IsRequired();
                 e.Property(o => o.DiscountAmount).HasColumnName("discount_amount").HasColumnType("decimal(18,2)").HasDefaultValue(0);
-                e.Property(o => o.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)").ValueGeneratedOnAddOrUpdate();
+                e.Property(o => o.FinalPrice)
+                 .HasColumnName("final_price")
+                 .HasColumnType("decimal(18,2)")
+                 .IsRequired(); 
+
                 e.Property(o => o.ShippingMethod).HasColumnName("shipping_method").HasMaxLength(100);
                 e.Property(o => o.PaymentMethod).HasColumnName("payment_method").HasMaxLength(100);
                 e.Property(o => o.Status).HasColumnName("status").HasMaxLength(50).HasDefaultValue("Chờ xác nhận");
@@ -116,7 +122,10 @@ namespace ClothingShop.Data
                 e.Property(od => od.VariantId).HasColumnName("variant_id").IsRequired();
                 e.Property(od => od.Quantity).HasColumnName("quantity").IsRequired();
                 e.Property(od => od.UnitPrice).HasColumnName("unit_price").HasColumnType("decimal(18,2)").IsRequired();
-                e.Property(od => od.LineTotal).HasColumnName("line_total").HasColumnType("decimal(18,2)").ValueGeneratedOnAddOrUpdate();
+                e.Property(od => od.LineTotal)
+                 .HasColumnName("line_total")
+                 .HasColumnType("decimal(18,2)")
+                 .IsRequired();
                 e.HasOne(od => od.Order).WithMany(o => o.OrderDetails)
                  .HasForeignKey(od => od.OrderId).OnDelete(DeleteBehavior.Cascade);
                 e.HasOne(od => od.Variant).WithMany()
