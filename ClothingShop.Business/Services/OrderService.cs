@@ -417,6 +417,8 @@ namespace ClothingShop.Business.Services
             };
         }
 
+
+
         private static OrderDto MapToDto(Order o) => new()
         {
             OrderId = o.OrderId,
@@ -456,6 +458,8 @@ namespace ClothingShop.Business.Services
                     LocationLatLong = t.LocationLatLong
                 }).ToList()
         };
+
+
 
 
     }

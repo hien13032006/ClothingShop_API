@@ -17,8 +17,9 @@ namespace ClothingShop.Data.Repositories
 
         public async Task ClearCartAsync(string userId)
         {
-            var items = await _context.Cart.Where(c => c.UserId == userId).ToListAsync();
-            _context.Cart.RemoveRange(items);
+            var cartItems = _context.Cart.Where(c => c.UserId == userId);
+            _context.Cart.RemoveRange(cartItems);
+            await _context.SaveChangesAsync(); // Cần dòng này!
         }
     }
 }

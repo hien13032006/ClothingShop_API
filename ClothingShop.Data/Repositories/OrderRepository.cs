@@ -11,9 +11,23 @@ namespace ClothingShop.Data.Repositories
 
         public async Task<string> GenerateNextOrderIdAsync()
         {
-            // Simple order id: ORD000001
-            var count = await _context.Orders.CountAsync();
-            return $"ORD{(count + 1):D6}";
+            // Lấy mã đơn hàng lớn nhất hiện có trong bảng
+            var lastOrder = await _context.Orders
+                .OrderByDescending(o => o.OrderId)
+                .FirstOrDefaultAsync();
+
+            if (lastOrder == null)
+            {
+                return "ORD000001"; // Nếu chưa có đơn nào, bắt đầu từ 000001
+            }
+
+            // Tách phần số từ mã (VD: ORD000005 -> 5)
+            string lastId = lastOrder.OrderId; // ORD000005
+            string numericPart = lastId.Replace("ORD", "");
+            int nextNumber = int.Parse(numericPart) + 1;
+
+            // Trả về mã mới (VD: ORD000006)
+            return $"ORD{nextNumber:D6}";
         }
 
         public async Task AddTrackingAsync(OrderTracking tracking)
