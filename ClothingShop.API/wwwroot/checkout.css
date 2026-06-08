@@ -54,6 +54,110 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+.option-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+/* Biến radio thành thẻ card */
+.option-card {
+    flex: 1;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+    .option-card:hover {
+        border-color: #008080;
+        background: #f0fdfd;
+    }
+
+    .option-card:has(input[value="Thanh toán online"]) .option-info::before {
+        content: "💳 "; /* Icon thẻ tín dụng */
+    }
+
+    .option-card:has(input[value="Thanh toán khi nhận hàng"]) .option-info::before {
+        content: "🏠 "; /* Icon nhà (COD) */
+    }
+
+/* Khi radio được chọn */
+input[type="radio"]:checked + .option-info {
+    font-weight: bold;
+}
+
+    input[type="radio"]:checked + .option-info::before {
+        content: "✓ ";
+        color: #008080;
+    }
+
+.option-card:has(input:checked) {
+    border-color: #008080;
+    background: #e6f7f7;
+}
+
+.option-info {
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px;
+}
+
+    .option-info small {
+        color: #666;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+/* Ẩn radio mặc định */
+input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #008080;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    max-height: 600px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-confirm, .btn-cancel {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
 /* Bảng sản phẩm */
 .product-header, .checkout-item {
     display: grid;
@@ -68,6 +172,40 @@
     font-weight: bold;
     color: #888 !important;
 }
+
+.product-header, .product-row {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Định nghĩa độ rộng các cột (tổng 100%) */
+.col-main {
+    flex: 3;
+}
+
+.col-type {
+    flex: 1.5;
+}
+
+.col-price {
+    flex: 1.5;
+    text-align: center;
+}
+
+.col-qty {
+    flex: 1;
+    text-align: center;
+}
+
+.col-total {
+    flex: 1.5;
+    text-align: right;
+    color: #ff6b81;
+    font-weight: bold;
+}
+
 
 .checkout-item {
     padding: 20px 0;
@@ -92,12 +230,6 @@
     border: 0;
     border-top: 1px dashed #ddd;
     margin: 5px 0;
-}
-
-.text-link {
-    color: #008080;
-    cursor: pointer;
-    font-size: 14px;
 }
 
 /* Tổng cộng cuối trang */
@@ -131,14 +263,6 @@
 .grand-total-row {
     border-top: 2px solid #f2f2f2;
     padding-top: 20px;
-}
-
-/* Căn lề cho Phương thức thanh toán */
-.method-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 20px 0;
-    border-bottom: 1px solid #f2f2f2;
 }
 
 /* Hàng tổng cộng và nút đặt hàng */

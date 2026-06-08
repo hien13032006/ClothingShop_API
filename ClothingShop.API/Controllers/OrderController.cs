@@ -48,6 +48,13 @@ namespace ClothingShop.API.Controllers
             return r.Success ? Ok(r) : BadRequest(r);
         }
 
+        [HttpPost("calculate")] 
+        public async Task<IActionResult> Calculate([FromBody] List<CartItemDto> items)
+        {
+            var result = await _orderService.CalculateOrderAsync(items);
+            return Ok(result); 
+        }
+
         // ── Admin ─────────────────────────────────────────────────────
 
         /// <summary>

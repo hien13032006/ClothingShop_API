@@ -14,6 +14,7 @@ namespace ClothingShop.Business.Services
         Task<ApiResponse<string>> CancelOrderAsync(string orderId, string userId);
         Task<ApiResponse<PagedResult<OrderDto>>> GetAllOrdersAsync(OrderFilterDto filter);
         Task<ApiResponse<OrderDto>> UpdateOrderStatusAsync(string orderId, UpdateOrderStatusDto dto);
+        Task<ApiResponse<OrderCalculationDto>> CalculateOrderAsync(List<CartItemDto> items);
     }
 
     public class OrderService : IOrderService
@@ -105,6 +106,7 @@ namespace ClothingShop.Business.Services
                 OrderDate = DateTime.Now,
                 TotalPrice = totalPrice,
                 DiscountAmount = memberDiscount + promoDiscount,
+                FinalPrice = totalPrice - (memberDiscount + promoDiscount),
                 ShippingMethod = dto.ShippingMethod,
                 PaymentMethod = dto.PaymentMethod,
                 Status = "Chờ xác nhận",
@@ -303,6 +305,45 @@ namespace ClothingShop.Business.Services
             });
         }
 
+        public async Task<ApiResponse<OrderCalculationDto>> CalculateOrderAsync(List<CartItemDto> items)
+        {
+            decimal subTotal = 0;
+            // 1. Khai báo biến discount ở đây
+            decimal discount = 0;
+            var calculatedItems = new List<CalculatedItemDto>();
+
+            foreach (var item in items)
+            {
+                var variant = await _context.ProductVariants
+                    .Include(v => v.Product)
+                    .FirstOrDefaultAsync(v => v.VariantId == item.VariantId);
+
+                if (variant == null) continue;
+
+                decimal price = variant.Product.Price;
+                subTotal += price * item.Quantity;
+
+                calculatedItems.Add(new CalculatedItemDto
+                {
+                    Name = variant.Product.Name,
+                    Price = price,
+                    Quantity = item.Quantity,
+                    Color = variant.Color,
+                    Size = variant.Size,
+                    ImageUrl = variant.Product.MainImage
+                });
+            }
+
+            // 2. Bây giờ biến 'discount' đã tồn tại và có thể sử dụng
+            return ApiResponse<OrderCalculationDto>.Ok(new OrderCalculationDto
+            {
+                Items = calculatedItems,
+                SubTotal = subTotal,
+                DiscountAmount = discount,
+                FinalTotal = subTotal - discount
+            });
+        }
+
         public async Task<ApiResponse<OrderDto>> UpdateOrderStatusAsync(string orderId, UpdateOrderStatusDto dto)
         {
             var order = await _orderRepo.GetWithDetailsAsync(orderId);
@@ -367,7 +408,7 @@ namespace ClothingShop.Business.Services
             OrderDate = o.OrderDate,
             TotalPrice = o.TotalPrice,
             DiscountAmount = o.DiscountAmount,
-            FinalPrice = o.FinalPrice,
+            FinalPrice = o.TotalPrice - o.DiscountAmount,
             ShippingMethod = o.ShippingMethod,
             PaymentMethod = o.PaymentMethod,
             Status = o.Status,
@@ -399,5 +440,7 @@ namespace ClothingShop.Business.Services
                     LocationLatLong = t.LocationLatLong
                 }).ToList()
         };
+
+
     }
 }

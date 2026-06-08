@@ -332,11 +332,22 @@ namespace ClothingShop.Models.DTOs
     // ═══════════════════════════════════════════════════════
     public class CreateOrderDto
     {
-        [Required] public int AddressId { get; set; }
-        [Required][RegularExpression("^(Giao hàng nhanh|Tiêu chuẩn)$")]
+        // Cho phép AddressId là null nếu muốn nhập tay
+        public int? AddressId { get; set; }
+
+        // Thông tin địa chỉ mới (nếu không chọn AddressId)
+        public string? NewReceiverName { get; set; }
+        public string? NewReceiverPhone { get; set; }
+        public string? NewAddressDetail { get; set; }
+
+        [Required]
+        [RegularExpression("^(Giao hàng nhanh|Tiêu chuẩn)$")]
         public string ShippingMethod { get; set; } = "Tiêu chuẩn";
-        [Required][RegularExpression("^(Thanh toán khi nhận hàng|Thanh toán online)$")]
+
+        [Required]
+        [RegularExpression("^(Thanh toán khi nhận hàng|Thanh toán online)$")]
         public string PaymentMethod { get; set; } = "Thanh toán khi nhận hàng";
+
         [MaxLength(50)] public string? PromotionCode { get; set; }
         [Required][MinLength(1)] public List<OrderItemDto> Items { get; set; } = new();
     }
@@ -408,6 +419,25 @@ namespace ClothingShop.Models.DTOs
         public string? Keyword { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
+    }
+
+    public class OrderCalculationDto
+    {
+        public List<CalculatedItemDto> Items { get; set; } = new();
+        public decimal SubTotal { get; set; }
+        public decimal ShippingFee { get; set; } // Bạn có thể thêm sau
+        public decimal DiscountAmount { get; set; }
+        public decimal FinalTotal { get; set; }
+    }
+
+    public class CalculatedItemDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public int Quantity { get; set; }
+        public string? Color { get; set; }
+        public string? Size { get; set; }
+        public string? ImageUrl { get; set; }
     }
 
     // ═══════════════════════════════════════════════════════

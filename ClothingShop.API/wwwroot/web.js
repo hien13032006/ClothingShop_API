@@ -1398,6 +1398,44 @@ function updateTotalPrice() {
     checkAndSyncMasterCheckbox();
 }
 
+
+// Hàm xử lý khi nhấn "Mua hàng" ở trang giỏ hàng
+async function checkout() {
+    const selectedItems = [];
+    const checkboxes = document.querySelectorAll('.cart-item-checkbox:checked');
+
+    if (checkboxes.length === 0) {
+        showModal("Thông báo", "Vui lòng chọn ít nhất một sản phẩm!");
+        return;
+    }
+
+    checkboxes.forEach(cb => {
+        const cartItemId = cb.getAttribute('data-cart-item-id');
+        // Tìm object item tương ứng trong window.currentCartItems để lấy quantity chuẩn từ API
+        const item = window.currentCartItems.find(i => i.cartId == cartItemId);
+
+        if (item) {
+            selectedItems.push({
+                cartItemId: item.cartId,
+                productId: item.productId,
+                variantId: item.variantId,
+                quantity: item.quantity, // Lấy chính xác quantity từ DB
+                subtotal: item.subtotal  // Lấy giá đã tính từ API
+            });
+        }
+    });
+
+    // Lưu mảng này vào LocalStorage
+    localStorage.setItem("checkout_data", JSON.stringify(selectedItems));
+
+    // Lưu thêm thông tin Voucher nếu có để trang thanh toán áp dụng
+    if (appliedVoucher) {
+        localStorage.setItem("checkout_voucher", JSON.stringify(appliedVoucher));
+    }
+
+    window.location.href = "checkout.html";
+}
+
 //======================================================================
 // VOUCHER / PROMOTION SYSTEM (API TRUY VẤN ĐỒNG BỘ TIỀN HÀNG)
 //======================================================================
@@ -1472,7 +1510,15 @@ function closeVoucherModal() {
 }
 
 function applyVoucherToCart(code, type, value, minOrderAmount) {
-    appliedVoucher = { code, discountType: type, discountValue: value, minOrderAmount };
+    const discountAmount = type === "Percent" ? (currentTotal * value / 100) : value;
+    appliedVoucher = {
+        code,
+        discountType: type,
+        discountValue: value,
+        minOrderAmount,
+        discountAmount 
+    };
+    localStorage.setItem("checkout_voucher", JSON.stringify(appliedVoucher));
 
     const voucherTrigger = document.querySelector('.select-voucher-trigger') || document.getElementById('open-voucher-btn');
     if (voucherTrigger) {
@@ -1586,4 +1632,11 @@ function renderOptions(selector, data) {
     container.innerHTML = data.map(item =>
         `<button class="opt-btn" onclick="this.parentNode.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">${item}</button>`
     ).join('');
+}
+
+function logout() {
+
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("checkout_voucher");
+    window.location.href = "login.html";
 }

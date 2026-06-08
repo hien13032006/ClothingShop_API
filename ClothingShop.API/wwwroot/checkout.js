@@ -1,213 +1,240 @@
-// 1. Mockup Dữ liệu (Cấu trúc này mô phỏng dữ liệu từ SQL Server/API)
-const mockData = {
-    customer: {
-        name: "Lê Thị Hiền",
-        phone: "(+84) 355 842 120",
-        address: "Âu Cơ, Hòa Khánh, Liên Chiểu, Đà Nẵng"
-    },
-    shipping: {
-        methodName: "Nhanh",
-        fee: 20000,
-        estimate: "31 Th03 - 3 Th04",
-        note: "Nhận Voucher trị giá 20.000đ nếu đơn hàng được giao trễ."
-    },
-    voucher: {
-        code: "SALE10",
-        discountAmount: 10000
-    },
-    paymentMethod: "Thanh toán khi nhận hàng(COD)"
+const API_BASE_URL = "https://localhost:5001/api";
+
+// State để quản lý dữ liệu checkout tập trung
+const checkoutState = {
+    items: JSON.parse(localStorage.getItem('checkout_data')) || [],
+    appliedVoucher: JSON.parse(localStorage.getItem('checkout_voucher')) || null,
+    address: null,
+    shippingMethod: "Tiêu chuẩn",
+    paymentMethod: "Thanh toán khi nhận hàng",
+    orderSummary: null
 };
 
-// 2. Khởi tạo khi load trang
-document.addEventListener('DOMContentLoaded', () => {
-    renderAddress();
-    renderProducts();
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!localStorage.getItem('accessToken')) {
+        window.location.href = "login.html";
+        return;
+    }
+    await initCheckout();
+    handlePaymentMethodChange();
 });
 
-// 3. Render Địa chỉ
-function renderAddress() {
-    const container = document.getElementById('address-display');
-    if (!container) return;
+async function initCheckout() {
+    // 1. Tải dữ liệu song song
+    await Promise.all([
+        fetchProfile(),
+        renderCheckoutProducts() // Gọi sau khi render sẽ có orderSummary để tính tổng
+    ]);
 
-    const addr = mockData.customer;
-    container.innerHTML = `
-        <strong>${addr.name} ${addr.phone}</strong><br>
-        ${addr.address}
-    `;
+    const voucherDisplay = document.getElementById('display-voucher-discount');
+    if (checkoutState.appliedVoucher) {
+        const discount = checkoutState.appliedVoucher.discountAmount || 0;
+        voucherDisplay.innerText = `-${discount.toLocaleString()}đ`;
+    } else {
+        voucherDisplay.innerText = "-0đ";
+    }
+
+    calculateOrderFees();
 }
 
-// 4. Render Sản phẩm & Tính toán
-function renderProducts() {
-    const container = document.getElementById('checkout-product-list');
-    const items = JSON.parse(localStorage.getItem('checkoutItems')) || [];
+function toggleAddressForm(showForm) {
+    document.getElementById('default-address-box').style.display = showForm ? 'none' : 'block';
+    document.getElementById('address-form-box').style.display = showForm ? 'block' : 'none';
+}
 
-    if (items.length === 0) {
-        container.innerHTML = `<div style="padding: 20px; text-align: center;">Chưa có sản phẩm nào.</div>`;
+// Lấy thông tin user và địa chỉ mặc định
+async function fetchProfile() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/customer/profile`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem("accessToken")}` }
+        });
+        const result = await res.json();
+        const userProfile = result.data || result;
+
+        const defaultBox = document.getElementById('default-address-box');
+        const formBox = document.getElementById('address-form-box');
+
+        // Giả sử nếu có địa chỉ thì hiển thị box mặc định, không thì hiện form
+        if (userProfile.address) {
+            checkoutState.address = userProfile;
+            document.getElementById('display-address-text').innerHTML =
+                `<strong>${userProfile.fullName}</strong> - ${userProfile.phone}<br>${userProfile.address}`;
+            defaultBox.style.display = 'block';
+        } else {
+            formBox.style.display = 'block'; // Chưa có địa chỉ, hiện form để nhập
+        }
+    } catch (e) {
+        console.error("Lỗi:", e);
+        document.getElementById('address-form-box').style.display = 'block';
+    }
+}
+
+// Render sản phẩm và lưu summary vào state
+async function renderCheckoutProducts() {
+    const response = await fetch(`${API_BASE_URL}/order/calculate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify(checkoutState.items)
+    });
+
+    const res = await response.json();
+    
+    // Kiểm tra xem API có trả về thành công không
+    if (!res.success) {
+        console.error("Lỗi tính toán đơn hàng:", res.message);
         return;
     }
 
-    let totalItemsPrice = 0;
-    let totalQuantity = 0; // Khởi tạo biến để tính tổng số lượng thực tế
+    // Gán dữ liệu đúng vào biến
+    const orderSummary = res.data;
+    checkoutState.orderSummary = orderSummary;
 
-    container.innerHTML = items.map(item => {
-        const priceNum = parseInt(item.price.replace(/\D/g, '')) || 0;
-        const qty = parseInt(item.quantity) || 0;
-        const subtotal = priceNum * qty;
+    const container = document.getElementById('checkout-product-list');
+    
+    // SỬA LỖI: dùng orderSummary.items thay vì data.items
+    container.innerHTML = orderSummary.items.map(item => `
+        <div class="product-row">
+            <div class="col-main"><img src="${item.imageUrl}" width="50" style="margin-right:10px;"> ${item.name}</div>
+            <div class="col-type">${item.color || 'N/A'} / ${item.size || 'N/A'}</div>
+            <div class="col-price">${item.price.toLocaleString()}đ</div>
+            <div class="col-qty">${item.quantity}</div>
+            <div class="col-total">${(item.price * item.quantity).toLocaleString()}đ</div>
+        </div>
+    `).join('');
 
-        totalItemsPrice += subtotal;
-        totalQuantity += qty; // Cộng dồn số lượng của từng món hàng
-
-        return `
-            <div class="checkout-item">
-                <div class="col-main" style="display: flex; align-items: center; gap: 15px;">
-                    <img src="${item.img}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;">
-                    <span>${item.name}</span>
-                </div>
-                <div class="col-type" style="color:#888; font-size:13px;">Màu: ${item.color}<br>Size: ${item.size}</div>
-                <div class="col-price">${item.price}</div>
-                <div class="col-qty">${item.quantity}</div>
-                <div class="col-total" style="color:#ff6b81; font-weight:bold;">${subtotal.toLocaleString()}đ</div>
-            </div>
-        `;
-    }).join('');
-
-    // Lấy giá trị voucher từ mockData
-    const voucherDiscount = mockData.voucher.discountAmount;
-
-    // Tổng tiền sau khi trừ voucher (nhưng chưa cộng ship)
-    const priceAfterVoucher = totalItemsPrice - voucherDiscount;
-
-    // Truyền kết quả tổng số lượng vào hàm hiển thị khối xám
-    renderExtraInfo(priceAfterVoucher, totalQuantity);
-    renderFinalPayment(priceAfterVoucher);
+    // Cập nhật tổng số lượng và giá
+    document.getElementById('label-total-quantity').innerText = `Tổng số tiền (${orderSummary.items.length} sản phẩm):`;
+    document.getElementById('subtotal-items-price').innerText = `${orderSummary.subTotal.toLocaleString()}đ`;
 }
 
-// 5. Render Khối thông tin bổ sung (Voucher, Note, Ship)
-function renderExtraInfo(priceAfterVoucher, totalQuantity) {
-    const ship = mockData.shipping;
-    const vch = mockData.voucher;
+function calculateOrderFees() {
+    // 1. Lấy dữ liệu thô từ state
+    const subTotal = checkoutState.orderSummary?.subTotal || 0;
+    
+    // 2. Lấy giá trị giảm giá từ voucher (Khởi tạo biến trước khi dùng)
+    const discount = checkoutState.appliedVoucher ? checkoutState.appliedVoucher.discountAmount : 0;
 
-    // 1. Cập nhật Voucher
-    const elVoucher = document.getElementById('display-voucher-discount');
-    if (elVoucher) elVoucher.innerText = `-${vch.discountAmount.toLocaleString()}đ`;
+    // 3. Lấy phí ship gốc từ radio
+    const shippingRadio = document.querySelector('input[name="shipping"]:checked');
+    let shipFee = shippingRadio.value === "Giao hàng nhanh" ? 50000 : 30000;
 
-    // 2. Cập nhật Thông tin vận chuyển
-    const elShipName = document.getElementById('ship-method-name');
-    const elShipInfo = document.getElementById('ship-estimate-info');
-    const elShipFee = document.getElementById('display-ship-fee');
+    const subTotalDisplay = (subTotal - discount) + shipFee;
+    document.getElementById('subtotal-items-price').innerText = subTotalDisplay.toLocaleString() + 'đ';
+    document.getElementById('display-shipping-fee').innerText = shipFee.toLocaleString() + 'đ';
 
-    if (elShipName) elShipName.innerText = ship.methodName;
-    if (elShipInfo) elShipInfo.innerHTML = `Nhận từ ${ship.estimate}<br>${ship.note}`;
-    if (elShipFee) elShipFee.innerText = `${ship.fee.toLocaleString()}đ`;
-
-    // 3. Cập nhật Tổng số tiền tạm tính (khối xám)
-    const elLabelQty = document.getElementById('label-total-quantity');
-    const elSubtotal = document.getElementById('subtotal-items-price');
-
-    if (elLabelQty) elLabelQty.innerText = `Tổng số tiền (${totalQuantity} sản phẩm):`;
-    if (elSubtotal) elSubtotal.innerText = `${priceAfterVoucher.toLocaleString()}đ`;
-}
-
-// 6. Render Bảng chi tiết thanh toán cuối trang
-function renderFinalPayment(priceAfterVoucher) {
-    const methodContainer = document.getElementById('payment-method-container');
-
-    if (methodContainer) {
-        methodContainer.style.display = "block";
-        methodContainer.innerHTML = `
-            <div style="display: flex; align-items: center; padding: 20px 0; border-bottom: 1px solid #f2f2f2; margin-bottom: 20px; gap:15px">
-                <span style="font-size: 18px; color: #333;">Phương thức thanh toán:</span>
-                <strong style="font-size: 16px;">${mockData.paymentMethod}</strong>
-                <span style="color: #0056b3; cursor: pointer; font-size: 14px;">Thay đổi</span>
-            </div>`;
-    } else {
-        console.error("Không tìm thấy thẻ #payment-method-container");
+    // 4. Logic Free Ship: Nếu tiền hàng (subTotal) >= 300.000đ thì phí ship = 0
+    let shippingDiscount = 0;
+    if (subTotal >= 300000) {
+        shippingDiscount = shipFee; 
+        shipFee = 0;
     }
 
-    // Cập nhật các con số trong bảng chi tiết bên dưới
-    const shipFee = mockData.shipping.fee; // Phí gốc (20.000đ)
-    const discountShip = 20000;            // Số tiền giảm giá phí vận chuyển
-    const vchDiscount = mockData.voucher.discountAmount; // Voucher đã trừ ở trên
+    // FinalTotal = Giá trị đơn hàng gốc - Giảm giá voucher + Phí ship (đã được xử lý 0đ nếu free ship)
+    const finalTotal = subTotal - discount + shipFee;
 
-    // Tổng thanh toán = Tiền hàng + (Phí ship - Giảm giá ship)
-    const finalTotal = priceAfterVoucher + (shipFee - discountShip);
+    document.getElementById('total-items-price').innerText = subTotal.toLocaleString() + 'đ';
+    document.getElementById('vouchership-discount').innerText = `-${shippingDiscount.toLocaleString()}đ`;
 
-    document.getElementById('total-items-price').innerText = priceAfterVoucher.toLocaleString() + "đ";
-    document.getElementById('display-shipping-fee').innerText = shipFee.toLocaleString() + "đ";
-    document.getElementById('vouchership-discount').innerText = "-" + discountShip.toLocaleString() + "đ";
-    document.getElementById('final-total').innerText = finalTotal.toLocaleString() + "đ";
-    document.getElementById('final-total-red').innerText = finalTotal.toLocaleString() + "đ";
+    // Cập nhật voucher
+    document.getElementById('display-voucher-discount').innerText = `-${discount.toLocaleString()}đ`;
+
+    // Cập nhật tổng cuối
+    document.getElementById('final-total').innerText = finalTotal.toLocaleString() + 'đ';
+    document.getElementById('final-total-red').innerText = finalTotal.toLocaleString() + 'đ';
 }
 
-// --- CẬP NHẬT LOGIC ĐẶT HÀNG ---
-// --- LOGIC XỬ LÝ MODAL TỰ THÂN (Không dùng web.js) ---
-
-// Hàm đóng Modal
-function closeCheckoutModal() {
-    const modal = document.getElementById('custom-alert');
-    if (modal) modal.style.display = 'none';
+function updateGrandTotal(shipFee) {
+    const subTotal = checkoutState.orderSummary?.subTotal || 0;
+    const discount = checkoutState.voucher ? checkoutState.voucher.discountAmount : 0
+    const finalTotal = subTotal + shipFee - discount;
+    document.getElementById('final-total').innerText = finalTotal.toLocaleString() + 'đ';
+    document.getElementById('final-total-red').innerText = finalTotal.toLocaleString() + 'đ';
 }
 
-// Hàm mở Modal xác nhận đặt hàng
-function placeOrder() {
-    const modal = document.getElementById('custom-alert');
-    const title = document.getElementById('modal-title');
-    const msg = document.getElementById('modal-message');
-    const btnConfirm = document.querySelector('.btn-confirm');
-    const btnCancel = document.querySelector('.btn-cancel');
 
-    if (modal && title && msg && btnConfirm) {
-        // 1. Thiết lập nội dung xác nhận
-        title.innerText = "Xác nhận đặt hàng";
-        msg.innerText = "Bạn có chắc chắn muốn đặt mua sản phẩm này không?";
+// Hàm đặt hàng chuẩn (lấy dữ liệu từ checkoutState)
+async function placeOrder() {
+    const shippingRadio = document.querySelector('input[name="shipping"]:checked');
+    const paymentRadio = document.querySelector('input[name="payment"]:checked');
 
-        // 2. Hiển thị nút Hủy và nút Xác nhận
-        if (btnCancel) btnCancel.style.display = "inline-block";
-        btnConfirm.innerText = "Xác nhận";
-
-        // 3. Hiển thị Modal
-        modal.style.display = 'flex';
-
-        // 4. Gán sự kiện cho nút Xác nhận
-        btnConfirm.onclick = function () {
-            executeOrder();
-        };
+    if (!shippingRadio || !paymentRadio) {
+        alert("Vui lòng chọn đầy đủ phương thức vận chuyển và thanh toán!");
+        return;
     }
-}
+    const payload = {
+        FullName: document.getElementById('input-full-name').value || checkoutState.address?.fullName,
+        Phone: document.getElementById('input-phone').value || checkoutState.address?.phone,
+        ShippingAddress: document.getElementById('input-address').value || checkoutState.address?.address,
+        AddressId: document.getElementById('address-id-hidden')?.value,
+        ShippingMethod: shippingRadio.value,
+        PaymentMethod: paymentRadio.value,
+        PromotionCode: checkoutState.appliedVoucher?.code || "",
+        Items: checkoutState.items.map(item => ({
+            VariantId: item.variantId,
+            Quantity: item.quantity
+        }))
+    };
 
-// Hàm thực hiện đặt hàng thành công
-function executeOrder() {
-    // --- Xử lý dữ liệu LocalStorage (Giữ nguyên logic của bạn) ---
-    const checkoutItems = JSON.parse(localStorage.getItem('checkoutItems')) || [];
-    let mainCart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (!payload.ShippingAddress) {
+        alert("Vui lòng nhập thông tin địa chỉ giao hàng!");
+        return;
+    }
 
-    mainCart = mainCart.filter(cartItem => {
-        return !checkoutItems.some(checkoutItem =>
-            checkoutItem.id === cartItem.id &&
-            checkoutItem.color === cartItem.color &&
-            checkoutItem.size === cartItem.size
-        );
+    const response = await fetch(`${API_BASE_URL}/order`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify(payload)
     });
 
-    localStorage.setItem('cart', JSON.stringify(mainCart));
-    localStorage.removeItem('checkoutItems');
-
-    // --- Cập nhật giao diện Modal sang trạng thái Thành công ---
-    const title = document.getElementById('modal-title');
-    const msg = document.getElementById('modal-message');
-    const btnConfirm = document.querySelector('.btn-confirm');
-    const btnCancel = document.querySelector('.btn-cancel');
-
-    if (title) title.innerHTML = "Đặt hàng thành công!";
-    if (msg) msg.innerHTML = "Đơn hàng đã được tiếp nhận.<br>Cảm ơn bạn đã mua sắm tại <b>Clothing</b>!";
-
-    // Ẩn nút Hủy, chỉ để lại nút về trang chủ
-    if (btnCancel) btnCancel.style.display = "none";
-
-    if (btnConfirm) {
-        btnConfirm.innerText = "Quay lại trang chủ";
-        btnConfirm.onclick = function () {
-            window.location.href = "index.html";
-        };
+    const result = await response.json();
+    if (result.success) {
+        alert("Đặt hàng thành công!");
+        localStorage.removeItem('checkout_data');
+        window.location.href = "order-history.html";
+    } else {
+        alert("Lỗi: " + result.message);
     }
+}
+
+
+//THANH TOÁN ONLINE
+let hasPaidOnline = false;
+
+// Hàm hiển thị Popup khi chọn Thanh toán online
+function handlePaymentMethodChange() {
+    const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+    const btnOrder = document.querySelector('.btn-order');
+
+    if (paymentMethod === "Thanh toán online") {
+        btnOrder.innerText = "Thanh toán ngay";
+        btnOrder.onclick = showPaymentModal; // Thay đổi hành động nút bấm
+    } else {
+        btnOrder.innerText = "Đặt hàng";
+        btnOrder.onclick = placeOrder; // Quay lại hành động thường
+    }
+}
+
+function showPaymentModal() {
+    document.getElementById('payment-qr-modal').style.display = 'flex';
+}
+
+function closePaymentModal() {
+    document.getElementById('payment-qr-modal').style.display = 'none';
+}
+
+function confirmPayment() {
+    hasPaidOnline = true; // Đánh dấu đã thanh toán
+    closePaymentModal();
+    alert("Đã xác nhận thanh toán! Bạn có thể nhấn Đặt hàng.");
+
+    // Đổi nút thành Đặt hàng sau khi thanh toán xong
+    const btnOrder = document.querySelector('.btn-order');
+    btnOrder.innerText = "Đặt hàng";
+    btnOrder.onclick = placeOrder;
 }
