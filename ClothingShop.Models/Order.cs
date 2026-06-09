@@ -19,6 +19,7 @@ namespace ClothingShop.Models
         public string? ShippingMethod { get; set; }
         public decimal ShippingFee { get; set; }
         public string? PaymentMethod { get; set; }
+        public string? CancelReason { get; set; }
         public string Status { get; set; } = "Chờ xác nhận";
         public bool HasReviewed { get; set; } = false;
 

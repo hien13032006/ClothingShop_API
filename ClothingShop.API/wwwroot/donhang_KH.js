@@ -24,8 +24,13 @@ function getActionButtons(order) {
     switch (order.status) {
         case 'Chờ xác nhận':
             return `<button class="btn btn-sub" onclick="cancelOrder(event, ${oId})">Hủy đơn</button>`;
+        case 'Đang chuẩn bị':
+            return '';
         case 'Đang giao':
-            return `<button class="btn btn-main" onclick="confirmReceived(event, ${oId})">Đã nhận được hàng</button>`;
+            return `
+        <button class="btn btn-main" onclick="confirmReceived(event, ${oId})">Đã nhận được hàng</button>
+        <button class="btn btn-sub" onclick="requestReturn(event, ${oId})">Trả hàng/Hoàn tiền</button>
+    `;
         default:
             return '';
     }
@@ -98,31 +103,57 @@ function filterByStatus(status, element) {
 }
 
 function getStatusClass(status) {
-    const map = { 'Chờ xác nhận': 'pending', 'Đang giao': 'shipping', 'Hoàn thành': 'completed', 'Đã hủy': 'cancelled' };
+    const map = {
+        'Chờ xác nhận': 'pending',
+        'Đang chuẩn bị': 'preparing', 
+        'Hoàn thành': 'completed',
+        'Đã hủy': 'cancelled',
+        'Trả hàng/Hoàn tiền': 'cancelled'
+    };
     return map[status] || '';
 }
 
+//Hủy đơn
+let currentCancelOrderId = null;
 
-async function cancelOrder(event, orderId) {
+function cancelOrder(event, orderId) {
     event.stopPropagation();
-    if (!confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) return;
-
-    try {
-        // Kiểm tra lại URL này khớp với Controller của bạn chưa
-        const response = await fetch(`${API_BASE_URL}/order/${orderId}/cancel`, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
-        });
-        if (response.ok) {
-            alert("Đã hủy đơn hàng thành công!\n Nếu bạn đã thanh toán, số tiền sẽ được hoàn sớm nhất có thể ");
-            loadOrders('all');
-        } else {
-            const err = await response.text();
-            alert("Lỗi: " + err);
-        }
-    } catch (e) { console.error(e); alert("Có lỗi xảy ra!"); }
+    currentCancelOrderId = orderId;
+    document.getElementById('cancelModal').style.display = 'flex';
 }
 
+function closeCancelModal() {
+    document.getElementById('cancelModal').style.display = 'none';
+}
+
+async function confirmCancel() {
+    const reason = document.getElementById('cancelReason').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/order/${currentCancelOrderId}/cancel`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                'Content-Type': 'application/json'
+            },
+            // Gửi trực tiếp chuỗi, không cần object
+            body: JSON.stringify(reason)
+        });
+
+        if (response.ok) {
+            alert("Đã hủy đơn hàng thành công!");
+            closeCancelModal();
+            loadOrders('all');
+        } else {
+            alert("Không thể hủy đơn hàng.");
+        }
+    } catch (e) {
+        alert("Lỗi kết nối!");
+    }
+}
+
+
+//Đã nhận được hàng
 async function confirmReceived(event, orderId) {
     event.stopPropagation();
     try {
@@ -139,6 +170,42 @@ async function confirmReceived(event, orderId) {
     } catch (e) { alert("Có lỗi xảy ra!"); }
 }
 
+//Trả hàng/hoàn tiền
+
+let currentReturnOrderId = null; // Biến này phải nằm ngoài các hàm
+
+function requestReturn(event, orderId) {
+    event.stopPropagation();
+    currentReturnOrderId = orderId; // Phải gán giá trị ở đây
+    document.getElementById('returnModal').style.display = 'flex';
+}
+
+async function confirmReturn() {
+    const reason = document.getElementById('returnReason').value;
+    try {
+        const response = await fetch(`${API_BASE_URL}/order/${currentReturnOrderId}/return`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                'Content-Type': 'application/json'
+            },
+            // Gửi chuỗi trực tiếp, không bọc trong object {}
+            body: JSON.stringify(reason)
+        });
+
+        if (response.ok) {
+            alert("Xác nhận Trả hàng/Hoàn tiền!");
+            closeReturnModal();
+            loadOrders('all');
+        } else {
+            alert("Không thể gửi yêu cầu!");
+        }
+    } catch (e) {
+        alert("Lỗi kết nối!");
+    }
+}
+
+//Mua lại
 async function reorder(event, orderId) {
     event.stopPropagation();
 
@@ -169,6 +236,7 @@ async function reorder(event, orderId) {
     }
 }
 
+//Đánh giá
 async function reviewOrder(event, orderId) {
     event.stopPropagation();
     document.getElementById('reviewModal').style.display = 'flex';

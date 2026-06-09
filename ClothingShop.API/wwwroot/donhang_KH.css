@@ -201,8 +201,7 @@
     }
 .modal-footer {
     display: flex;
-    justify-content: flex-end; /* Nút nằm bên phải */
-    margin-top: 15px;
+    justify-content: flex-end;
 }
 
 .close-btn {
@@ -262,4 +261,13 @@
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
     color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    margin: 20px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
 }

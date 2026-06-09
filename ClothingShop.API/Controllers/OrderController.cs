@@ -49,13 +49,25 @@ namespace ClothingShop.API.Controllers
             return r.Success ? Ok(r) : NotFound(r);
         }
 
-        /// <summary>PUT /api/order/{orderId}/cancel</summary>
         [HttpPut("{orderId}/cancel")]
-        public async Task<IActionResult> CancelOrder(string orderId)
+        public async Task<IActionResult> CancelOrder(string orderId, [FromBody] System.Text.Json.JsonElement body)
         {
-            var r = await _orderService.CancelOrderAsync(orderId, GetUserId());
+            // Lấy giá trị chuỗi từ thuộc tính "reason"
+            string reason = body.GetProperty("reason").GetString();
+
+            var r = await _orderService.CancelOrderAsync(orderId, GetUserId(), reason);
             return r.Success ? Ok(r) : BadRequest(r);
         }
+
+        [HttpPut("{orderId}/return")]
+        public async Task<IActionResult> ReturnOrder(string orderId, [FromBody] string reason)
+        {
+            // Gọi hàm trả hàng với logic không cập nhật kho
+            var r = await _orderService.ReturnOrderAsync(orderId, GetUserId(), reason);
+            return r.Success ? Ok(r) : BadRequest(r);
+        }
+
+
         [HttpPut("{orderId}/confirm-received")]
         public async Task<IActionResult> ConfirmReceived(string orderId)
         {

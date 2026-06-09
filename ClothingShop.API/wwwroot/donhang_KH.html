@@ -81,6 +81,7 @@
         <div class="order-tabs">
             <div class="tab-item active" onclick="filterByStatus('all', this)">Tất cả</div>
             <div class="tab-item" onclick="filterByStatus('pending', this)">Chờ xác nhận</div>
+            <div class="tab-item" onclick="filterByStatus('preparing', this)">Đang chuẩn bị</div>
             <div class="tab-item" onclick="filterByStatus('shipping', this)">Đang giao</div>
             <div class="tab-item" onclick="filterByStatus('completed', this)">Hoàn thành</div>
             <div class="tab-item" onclick="filterByStatus('cancelled', this)">Đã hủy</div>
@@ -101,6 +102,40 @@
 
             <div class="modal-footer">
                 <button class="btn-main" onclick="submitReview()">Gửi đánh giá</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cancelModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeCancelModal()">&times;</span>
+            <h3>Lý do bạn muốn hủy đơn</h3>
+            <select id="cancelReason" class="form-control">
+                <option value="Thay đổi ý định">Thay đổi ý định</option>
+                <option value="Tìm thấy chỗ bán rẻ hơn">Tìm thấy chỗ bán rẻ hơn</option>
+                <option value="Phí vận chuyển quá cao">Phí vận chuyển quá cao</option>
+                <option value="Thay đổi thông tin nhận hàng">Thay đổi thông tin nhận hàng</option>
+                <option value="Muốn thay đổi màu, size, số lượng">Muốn thay đổi màu, size, số lượng</option>
+                <option value="Khác">Khác</option>
+            </select>
+            <div class="modal-footer">
+                <button class="btn-main" onclick="confirmCancel()">Xác nhận hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="returnModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeReturnModal()">&times;</span>
+            <h3>Yêu cầu Trả hàng / Hoàn tiền</h3>
+            <select id="returnReason" class="form-control">
+                <option value="Sản phẩm lỗi/hỏng">Sản phẩm lỗi/hỏng</option>
+                <option value="Không giống mô tả">Không giống mô tả</option>
+                <option value="Sai sản phẩm">Sai sản phẩm</option>
+                <option value="Khác">Khác</option>
+            </select>
+            <div class="modal-footer">
+                <button class="btn-main" onclick="confirmReturn()">Gửi yêu cầu</button>
             </div>
         </div>
     </div>

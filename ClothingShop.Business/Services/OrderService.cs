@@ -11,7 +11,8 @@ namespace ClothingShop.Business.Services
         Task<ApiResponse<OrderDto>> CreateOrderAsync(string userId, CreateOrderDto dto);
         Task<ApiResponse<OrderDto>> GetOrderDetailAsync(string orderId, string userId);
         Task<ApiResponse<List<OrderDto>>> GetMyOrdersAsync(string userId, string status);
-        Task<ApiResponse<string>> CancelOrderAsync(string orderId, string userId);
+        Task<ApiResponse<string>> CancelOrderAsync(string orderId, string userId, string reason);
+        Task<ApiResponse<string>> ReturnOrderAsync(string orderId, string userId, string reason);
         Task<ApiResponse<string>> ConfirmReceivedAsync(string orderId, string userId);
         Task<ApiResponse<string>> AddReviewAsync(string orderId, string userId, ReviewDto dto);
         Task<ApiResponse<PagedResult<OrderDto>>> GetAllOrdersAsync(OrderFilterDto filter);
@@ -237,9 +238,10 @@ namespace ClothingShop.Business.Services
         {
             var map = new Dictionary<string, string> {
                 { "pending", "Chờ xác nhận" },
-                { "preparing", "Chuẩn bị hàng" },
+                { "preparing", "Đang chuẩn bị" },
                 { "shipping", "Đang giao" },
                 { "completed", "Hoàn thành" },
+                { "returned", "Trả hàng/Hoàn tiền" },
                 { "cancelled", "Đã hủy" }
             };
              return map.ContainsKey(status) ? map[status] : status;
@@ -247,57 +249,63 @@ namespace ClothingShop.Business.Services
 
         public async Task<ApiResponse<List<OrderDto>>> GetMyOrdersAsync(string userId, string status)
         {
-            // 1. Lấy tất cả đơn hàng của User từ Repo
+            // 1. Lấy tất cả đơn hàng
             var orders = await _orderRepo.GetByCustomerAsync(userId);
 
-            // 2. Chỉ lọc khi status khác "all"
+            // 2. Lọc dữ liệu
             if (!string.IsNullOrEmpty(status) && status.ToLower() != "all")
             {
-                // Chuyển đổi status từ frontend (ví dụ: 'pending') sang status trong DB (ví dụ: 'Chờ xác nhận')
-                var dbStatus = MapStatus(status);
-
-                foreach (var o in orders)
+                if (status.ToLower() == "cancelled")
                 {
-                    Console.WriteLine($"Status trong DB: {o.Status}");
+                    orders = orders.Where(o =>
+                        !string.IsNullOrEmpty(o.Status) &&
+                        (o.Status.Trim().Equals("Đã hủy", StringComparison.OrdinalIgnoreCase) ||
+                         o.Status.Trim().Equals("Trả hàng/Hoàn tiền", StringComparison.OrdinalIgnoreCase))
+                    ).ToList();
                 }
-
-                // Lọc danh sách dựa trên trạng thái đã map
-                orders = orders.Where(o => o.Status == dbStatus).ToList();
+                else
+                {
+                    // Các tab thông thường khác
+                    var dbStatus = MapStatus(status);
+                    orders = orders.Where(o =>
+                        !string.IsNullOrEmpty(o.Status) &&
+                        o.Status.Trim().Equals(dbStatus, StringComparison.OrdinalIgnoreCase)
+                    ).ToList();
+                }
+                
             }
 
             // 3. Map sang DTO và trả về
             return ApiResponse<List<OrderDto>>.Ok(orders.Select(MapToDto).ToList());
         }
 
-        public async Task<ApiResponse<string>> CancelOrderAsync(string orderId, string userId)
+        private async Task<ApiResponse<string>> ProcessOrderReversalAsync(string orderId, string userId, string reason, string newStatus, bool updateStock)
         {
             var order = await _orderRepo.GetWithDetailsAsync(orderId);
             if (order == null) return ApiResponse<string>.Fail("Không tìm thấy đơn hàng");
-            if (order.UserId != userId) return ApiResponse<string>.Fail("Không có quyền hủy đơn hàng này");
-            if (!new[] { "Chờ xác nhận", "Đang chuẩn bị" }.Contains(order.Status))
-                return ApiResponse<string>.Fail($"Không thể hủy khi đơn đang ở trạng thái '{order.Status}'");
+            if (order.UserId != userId) return ApiResponse<string>.Fail("Không có quyền thực hiện thao tác này");
 
-            // 1. Cập nhật trạng thái đơn hàng
-            order.Status = "Đã hủy";
-            _orderRepo.Update(order); // Hoặc _context.Orders.Update(order);
+            // 1. Cập nhật trạng thái và lý do
+            order.Status = newStatus;
+            order.CancelReason = reason;
+            _orderRepo.Update(order);
 
-            // 2. Cập nhật kho và lượt bán
-            foreach (var d in order.OrderDetails)
+            // 2. Cập nhật kho và lượt bán (chỉ chạy khi updateStock = true)
+            if (updateStock)
             {
-                // Gọi repo để cập nhật kho
-                await _productRepo.UpdateStockAsync(d.VariantId, d.Quantity);
-
-                // Cập nhật lượt bán
-                var v = await _context.ProductVariants.Include(x => x.Product)
-                    .FirstOrDefaultAsync(x => x.VariantId == d.VariantId);
-                if (v?.Product != null)
+                foreach (var d in order.OrderDetails)
                 {
-                    v.Product.SoldCount = Math.Max(0, v.Product.SoldCount - d.Quantity);
-                    // Không cần _context.Products.Update vì EF đang theo dõi (tracking) thực thể này
+                    await _productRepo.UpdateStockAsync(d.VariantId, d.Quantity);
+                    var v = await _context.ProductVariants.Include(x => x.Product)
+                        .FirstOrDefaultAsync(x => x.VariantId == d.VariantId);
+                    if (v?.Product != null)
+                    {
+                        v.Product.SoldCount = Math.Max(0, v.Product.SoldCount - d.Quantity);
+                    }
                 }
             }
 
-            // 3. Hoàn điểm (đoạn code cũ của bạn)
+            // 3. Hoàn điểm (Logic giữ nguyên)
             var pointRecord = await _context.PointHistories
                 .FirstOrDefaultAsync(p => p.UserId == userId && p.OrderId == orderId && p.Points > 0);
             if (pointRecord != null)
@@ -313,36 +321,43 @@ namespace ClothingShop.Business.Services
                         UserId = userId,
                         OrderId = orderId,
                         Points = -pointRecord.Points,
-                        Reason = $"Hoàn điểm do hủy đơn {orderId}",
+                        Reason = $"Hoàn điểm do {newStatus} đơn {orderId}",
                         CreatedAt = DateTime.Now
                     });
                 }
             }
 
-            string notifBody = $"Đơn #{orderId} đã hủy thành công.";
-            if (order.PaymentMethod == "Thanh toán online" )
-            {
-                notifBody += " Bạn sẽ được hoàn tiền sớm trong 3-5 ngày làm việc.";
-            }
-
-            await _notifService.CreateAsync(userId, "order_update", "Đơn hàng đã hủy", notifBody, orderId);
-
-            return ApiResponse<string>.Ok("OK", "Hủy đơn hàng thành công");
-
-            // QUAN TRỌNG: LƯU TẤT CẢ THAY ĐỔI VÀO DATABASE
             await _context.SaveChangesAsync();
 
-            // 4. Các hành động phụ (Tracking, Notif)
+            // 4. Tracking và Thông báo
             await _orderRepo.AddTrackingAsync(new OrderTracking
             {
                 OrderId = orderId,
-                StatusUpdate = "Đơn hàng đã bị hủy bởi khách hàng",
+                StatusUpdate = $"Đơn hàng chuyển trạng thái: {newStatus}",
                 UpdatedAt = DateTime.Now
             });
 
-            await _notifService.CreateAsync(userId, "order_update", "Đơn hàng đã hủy", $"Đơn #{orderId} đã hủy thành công.", orderId);
+            string notifBody = $"Đơn #{orderId} đã chuyển sang trạng thái {newStatus}.";
+            if (order.PaymentMethod == "Thanh toán online") notifBody += " Bạn sẽ được hoàn tiền sớm.";
+            await _notifService.CreateAsync(userId, "order_update", newStatus, notifBody, orderId);
 
-            return ApiResponse<string>.Ok("OK", "Hủy đơn hàng thành công");
+            return ApiResponse<string>.Ok("OK", "Thao tác thành công");
+        }
+
+        public async Task<ApiResponse<string>> CancelOrderAsync(string orderId, string userId, string reason)
+        {
+            var order = await _orderRepo.GetWithDetailsAsync(orderId);
+            if (!new[] { "Chờ xác nhận", "Đang chuẩn bị" }.Contains(order?.Status))
+                return ApiResponse<string>.Fail("Không thể hủy đơn ở trạng thái này");
+
+            return await ProcessOrderReversalAsync(orderId, userId, reason, "Đã hủy", true);
+        }
+
+        // Dùng cho Trả hàng (KHÔNG cập nhật kho)
+        public async Task<ApiResponse<string>> ReturnOrderAsync(string orderId, string userId, string reason)
+        {
+            // Có thể thêm kiểm tra trạng thái khác, ví dụ chỉ cho trả nếu status là "Hoàn thành"
+            return await ProcessOrderReversalAsync(orderId, userId, $"Trả hàng: {reason}", "Trả hàng/Hoàn tiền", false);
         }
 
         // --- XÁC NHẬN ĐÃ NHẬN HÀNG ---

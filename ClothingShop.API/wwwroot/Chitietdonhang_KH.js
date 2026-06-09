@@ -2,7 +2,7 @@
 function mapStatusToKey(status) {
     const map = {
         "Chờ xác nhận": "placed",
-        "Chuẩn bị hàng": "new",
+        "Đang chuẩn bị": "new",
         "Đang giao": "shipping",
         "Đã giao": "delivered",
         "Hoàn thành": "completed", // Thêm dòng này để khớp với JSON
