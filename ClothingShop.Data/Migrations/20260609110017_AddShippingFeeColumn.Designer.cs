@@ -4,6 +4,7 @@ using ClothingShop.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClothingShop.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609110017_AddShippingFeeColumn")]
+    partial class AddShippingFeeColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -272,7 +275,9 @@ namespace ClothingShop.Data.Migrations
                         .HasColumnName("payment_method");
 
                     b.Property<decimal>("ShippingFee")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m)
                         .HasColumnName("shipping_fee");
 
                     b.Property<string>("ShippingMethod")

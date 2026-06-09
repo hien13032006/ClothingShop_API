@@ -28,6 +28,7 @@ namespace ClothingShop.Business.Services
         private readonly IPromotionRepository _promoRepo;
         private readonly INotificationService _notifService;
         private readonly AppDbContext _context;
+        private readonly IShippingService _shippingService;
 
         public OrderService(
             IOrderRepository orderRepo,
@@ -36,6 +37,7 @@ namespace ClothingShop.Business.Services
             ICustomerRepository customerRepo,
             IPromotionRepository promoRepo,
             INotificationService notifService,
+            IShippingService shippingService,
             AppDbContext context)
         {
             _orderRepo = orderRepo;
@@ -44,12 +46,12 @@ namespace ClothingShop.Business.Services
             _customerRepo = customerRepo;
             _promoRepo = promoRepo;
             _notifService = notifService;
+            _shippingService = shippingService;
             _context = context;
         }
 
         public async Task<ApiResponse<OrderDto>> CreateOrderAsync(string userId, CreateOrderDto dto)
         {
-            _context.ChangeTracker.Clear();
             // 1. Kiểm tra cơ bản (Validation)
             if (!dto.Items.Any()) return ApiResponse<OrderDto>.Fail("Đơn hàng không có sản phẩm");
 
@@ -61,12 +63,9 @@ namespace ClothingShop.Business.Services
                 try
                 {
                     // 2. Lấy thông tin khách hàng & địa chỉ
-                    var customer = await _customerRepo.GetByIdAsync(userId);
-                    _context.Entry(customer).State = EntityState.Detached;
+                    var customer = await _context.Customers.FirstOrDefaultAsync(u => u.UserId == userId);
                     var address = await _context.Addresses
                         .FirstOrDefaultAsync(a => a.AddressId == dto.AddressId && a.UserId == userId);
-                    _context.Entry(address).State = EntityState.Detached;
-
                     if (customer == null) return ApiResponse<OrderDto>.Fail("Không tìm thấy thông tin khách hàng");
                     if (address == null) return ApiResponse<OrderDto>.Fail("Địa chỉ giao hàng không hợp lệ");
 
@@ -122,7 +121,29 @@ namespace ClothingShop.Business.Services
                             UsedAt = DateTime.UtcNow
                         });
                     }
+                    var shippingResult = await _shippingService.GetFeeAsync(dto.ShippingMethod, subTotal);
 
+                    Console.WriteLine($"[CRITICAL DEBUG]");
+                    Console.WriteLine($"Subtotal: {subTotal}");
+                    Console.WriteLine($"Shipping Method input: {dto.ShippingMethod}");
+                    Console.WriteLine($"Shipping Result Success: {shippingResult.Success}");
+
+                    if (shippingResult.Success)
+                    {
+                        Console.WriteLine($"Fee trả về từ Service: {shippingResult.Data.Fee}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Lỗi từ Service: {shippingResult.Message}");
+                    }
+
+                    decimal shippingFee = shippingResult.Success ? shippingResult.Data.Fee : 0;
+
+                    if (subTotal >= 300000)
+                    {
+                        shippingFee = 0;
+                    }
+                    Console.WriteLine($"DEBUG: Giá trị shippingFee tính được là: {shippingFee}");
                     // 5. Tạo đối tượng Order
                     var order = new Order
                     {
@@ -132,7 +153,8 @@ namespace ClothingShop.Business.Services
                         TotalPrice = subTotal,
                         DiscountAmount = discount,
                         // Đảm bảo không bao giờ là null và không bao giờ âm
-                        FinalPrice = Math.Max(0, subTotal - discount),
+                        ShippingFee = shippingFee,
+                        FinalPrice = Math.Max(0, (subTotal + shippingFee) - discount),
                         ShippingMethod = dto.ShippingMethod ?? "Standard",
                         PaymentMethod = dto.PaymentMethod ?? "COD",
                         Status = "Chờ xác nhận",
@@ -149,14 +171,12 @@ namespace ClothingShop.Business.Services
 
                     // 7. Lưu tất cả
                     await _context.Orders.AddAsync(order);
-                    await _cartRepo.ClearCartAsync(userId); // Dọn giỏ hàng
-                    foreach (var entry in _context.ChangeTracker.Entries())
+                    await _cartRepo.ClearCartAsync(userId);
+                    var entry = _context.Entry(order);
+                    Console.WriteLine($"Trạng thái của Order: {entry.State}");
+                    foreach (var property in entry.Properties)
                     {
-                        // Nếu entity không phải là Order hoặc OrderDetail, hãy tách nó ra khỏi sự theo dõi
-                        if (!(entry.Entity is Order || entry.Entity is OrderDetail))
-                        {
-                            entry.State = EntityState.Detached;
-                        }
+                        Console.WriteLine($"Cột: {property.Metadata.Name}, Giá trị: {property.CurrentValue}");
                     }
                     await _context.SaveChangesAsync();      // LƯU TẤT CẢ TẠI ĐÂY
                     await tx.CommitAsync();
@@ -217,6 +237,7 @@ namespace ClothingShop.Business.Services
         {
             var map = new Dictionary<string, string> {
                 { "pending", "Chờ xác nhận" },
+                { "preparing", "Chuẩn bị hàng" },
                 { "shipping", "Đang giao" },
                 { "completed", "Hoàn thành" },
                 { "cancelled", "Đã hủy" }
@@ -530,9 +551,14 @@ namespace ClothingShop.Business.Services
             OrderId = o.OrderId,
             CustomerName = o.Customer?.FullName,
             OrderDate = o.OrderDate,
+            Phone = o.Customer?.Phone ?? "Chưa cập nhật",
+            Address = o.Customer?.Addresses?.FirstOrDefault(a => a.IsDefault)?.AddressDetail
+              ?? o.Customer?.Addresses?.FirstOrDefault()?.AddressDetail
+              ?? "Chưa có địa chỉ",
             TotalPrice = o.TotalPrice,
+            ShippingFee = o.ShippingFee,
             DiscountAmount = o.DiscountAmount,
-            FinalPrice = o.TotalPrice - o.DiscountAmount,
+            FinalPrice = o.TotalPrice - o.DiscountAmount + o.ShippingFee,
             ShippingMethod = o.ShippingMethod,
             PaymentMethod = o.PaymentMethod,
             Status = o.Status,

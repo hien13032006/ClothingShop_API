@@ -28,11 +28,18 @@ namespace ClothingShop.Business.Services
 
         public async Task<ApiResponse<ShippingOptionDto>> GetFeeAsync(string method, decimal orderAmount)
         {
+            if (string.IsNullOrWhiteSpace(method)) return ApiResponse<ShippingOptionDto>.Fail("Phương thức không hợp lệ");
+
+            // Sử dụng Trim() và ToLower() để loại bỏ lỗi do khoảng trắng hoặc hoa/thường
+            var searchMethod = method.Trim().ToLower();
+
             var fee = await _context.ShippingFees
-                .FirstOrDefaultAsync(f => f.Method == method);
+                .FirstOrDefaultAsync(f => f.Method.Trim().ToLower() == searchMethod);
 
             if (fee == null)
-                return ApiResponse<ShippingOptionDto>.Fail($"Không tìm thấy phương thức '{method}'");
+            {
+                return ApiResponse<ShippingOptionDto>.Fail($"Không tìm thấy cấu hình cho phương thức '{method}'");
+            }
 
             return ApiResponse<ShippingOptionDto>.Ok(ToDto(fee, orderAmount));
         }

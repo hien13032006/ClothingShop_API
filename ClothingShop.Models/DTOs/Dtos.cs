@@ -362,8 +362,11 @@ namespace ClothingShop.Models.DTOs
     {
         public string OrderId { get; set; } = string.Empty;
         public string? CustomerName { get; set; }
+        public string? Phone { get; set; }    
+        public string? Address { get; set; }
         public DateTime OrderDate { get; set; }
         public decimal TotalPrice { get; set; }
+        public decimal ShippingFee { get; set; }
         public decimal DiscountAmount { get; set; }
         public decimal FinalPrice { get; set; }
         public string? ShippingMethod { get; set; }

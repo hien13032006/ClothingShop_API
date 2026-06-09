@@ -71,7 +71,7 @@ async function loadOrders(status) {
         <hr class="order-divider">
         <div class="order-card-footer">
             <div class="total-section">
-                Thành tiền: <span class="total-amount">${(order.finalPrice || 0).toLocaleString()}₫</span>
+                Thành tiền: <span class="total-amount">${((order.finalPrice || order.FinalPrice || 0)).toLocaleString()}₫</span>
             </div>
             <div class="order-buttons">
                 ${getActionButtons(order)}

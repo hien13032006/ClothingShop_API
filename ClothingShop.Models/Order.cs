@@ -17,6 +17,7 @@ namespace ClothingShop.Models
         [Column("final_price")]
         public decimal FinalPrice { get; set; }
         public string? ShippingMethod { get; set; }
+        public decimal ShippingFee { get; set; }
         public string? PaymentMethod { get; set; }
         public string Status { get; set; } = "Chờ xác nhận";
         public bool HasReviewed { get; set; } = false;

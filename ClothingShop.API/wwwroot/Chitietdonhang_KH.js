@@ -1,78 +1,108 @@
-﻿function mapStatusToKey(status) {
+﻿const API_BASE_URL = 'https://localhost:5001/api';
+function mapStatusToKey(status) {
     const map = {
         "Chờ xác nhận": "placed",
         "Chuẩn bị hàng": "new",
         "Đang giao": "shipping",
         "Đã giao": "delivered",
+        "Hoàn thành": "completed", // Thêm dòng này để khớp với JSON
         "Đánh giá": "completed"
     };
-    return map[status] || "placed"; // Mặc định là 'placed'
+    return map[status] || "placed";
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Lấy ID từ URL: /chi-tiet?id=ORD000001
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get('id');
 
-    if (!orderId) return alert("Không tìm thấy mã đơn hàng!");
+    if (!orderId) {
+        alert("Không tìm thấy mã đơn hàng!");
+        return;
+    }
 
     try {
-        // Gọi API backend thay vì localStorage
-        const response = await fetch(`/api/orders/${orderId}`);
+        // Dùng template literal để đảm bảo đường dẫn chính xác
+        const response = await fetch(`${API_BASE_URL}/order/${orderId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            // Nếu lỗi 404 hoặc 401, hiển thị thông báo cụ thể
+            const errorData = await response.json().catch(() => ({ message: "Lỗi kết nối server" }));
+            throw new Error(errorData.message || "Không tìm thấy đơn hàng");
+        }
+
         const result = await response.json();
 
         if (result.success) {
-            const order = result.data;
-            displayOrderDetail(order);
-            const activeKey = mapStatusToKey(order.status);
-            renderTimeline(activeKey);
-            renderCustomerActions(order.status, order.id);
-        } else {
-            alert("Không tải được đơn hàng!");
+            displayOrderDetail(result.data);
+            renderTimeline(mapStatusToKey(result.data.status));
+            // Không cần renderCustomerActions nữa vì bạn đã bỏ chức năng
         }
     } catch (error) {
-        console.error("Lỗi kết nối:", error);
+        console.error("Lỗi:", error);
+        alert("Có lỗi xảy ra: " + error.message);
     }
 });
 
 // 2. Hiển thị thông tin hóa đơn động
 function displayOrderDetail(order) {
-    document.getElementById('title-id').innerText = `Chi tiết đơn hàng ${order.id}`;
-    document.getElementById('customer-name').innerText = order.customer;
-    document.getElementById('customer-phone').innerText = order.phone || "Chưa cập nhật";
+    // Đổ thông tin chung - Sử dụng đúng tên field từ JSON API
+    const title = document.getElementById('title-id');
+    if (title) title.innerText = `Chi tiết đơn hàng ${order.orderId}`;
+
+    const custName = document.getElementById('customer-name');
+    if (custName) custName.innerText = order.customerName || "Chưa cập nhật";
+
+    // Gán dữ liệu vào các thẻ nếu chúng tồn tại trong HTML
+    const custPhone = document.getElementById('customer-phone');
+    if (custPhone) custPhone.innerText = order.phone || "Chưa cập nhật";
+
     document.getElementById('customer-address').innerText = order.address || "Chưa có địa chỉ";
-    document.getElementById('customer-note').innerText = order.note || "Không có ghi chú";
-    document.getElementById('order-date').innerText = order.date;
-    document.getElementById('order-status-text').innerText = order.statusText;
 
-    // Đổ phương thức (nếu mockup có các trường này)
-    if (document.getElementById('shipping-method'))
-        document.getElementById('shipping-method').innerText = order.shippingMethod || "Giao hàng nhanh";
-    if (document.getElementById('payment-method'))
-        document.getElementById('payment-method').innerText = order.paymentMethod || "Thanh toán khi nhận hàng";
+    const orderDate = document.getElementById('order-date');
+    if (orderDate) orderDate.innerText = new Date(order.orderDate).toLocaleString();
 
-    // Hiển thị danh sách sản phẩm
-    const productTbody = document.getElementById('product-list');
-    if (order.products) {
-        productTbody.innerHTML = order.products.map(p => `
+    const statusText = document.getElementById('order-status-text');
+    if (statusText) statusText.innerText = order.status;
+
+    const paymentMethod = document.getElementById('payment-method');
+    if (paymentMethod) {
+        paymentMethod.innerText = order.paymentMethod || "Chưa xác định";
+    }
+
+    // Đổ sản phẩm (dùng 'details' thay vì 'products')
+    const productList = document.getElementById('product-list');
+    if (productList && order.details) {
+        productList.innerHTML = order.details.map(p => `
             <tr>
-                <td>${p.name}</td>
+                <td>${p.productName}</td>
                 <td style="text-align: center;">${p.quantity}</td>
-                <td style="text-align: right;">${p.price.toLocaleString()}₫</td>
-                <td style="text-align: right;">${(p.quantity * p.price).toLocaleString()}₫</td>
+                <td style="text-align: right;">${p.unitPrice.toLocaleString()}₫</td>
+                <td style="text-align: right;">${p.lineTotal.toLocaleString()}₫</td>
             </tr>
         `).join('');
     }
 
-    // Đổ các con số tổng kết
-    if (document.getElementById('subtotal'))
-        document.getElementById('subtotal').innerText = (order.subtotal || 0).toLocaleString() + "₫";
-    if (document.getElementById('shipping-fee'))
-        document.getElementById('shipping-fee').innerText = (order.shippingFee || 0).toLocaleString() + "₫";
-    if (document.getElementById('discount'))
-        document.getElementById('discount').innerText = "-" + (order.discount || 0).toLocaleString() + "₫";
+    // Đổ tổng tiền
+    const subtotal = document.getElementById('subtotal');
+    if (subtotal) subtotal.innerText = (order.totalPrice || 0).toLocaleString() + "₫";
 
-    document.getElementById('total-amount').innerText = order.total;
+    const discount = document.getElementById('discount');
+    if (discount) discount.innerText = "-" + (order.discountAmount || 0).toLocaleString() + "₫";
+
+    const shippingFeeElement = document.getElementById('shipping-fee');
+    if (shippingFeeElement) {
+
+        shippingFeeElement.innerText = "" + (order.shippingFee || 0).toLocaleString() + "₫";
+    }
+
+    const totalAmount = document.getElementById('total-amount');
+    if (totalAmount) totalAmount.innerText = order.finalPrice.toLocaleString() + "₫";
 }
 
 // 3. Vẽ Timeline giống ảnh mẫu (Đơn hàng đã đặt -> Chuẩn bị hàng -> Đang giao -> Đã giao -> Đánh giá)
@@ -85,13 +115,11 @@ function renderTimeline(status) {
         { key: 'completed', icon: 'fa-star', text: 'Đánh giá' }
     ];
 
+    // Tìm index dựa trên key. Nếu không tìm thấy, mặc định là 0 (Đã đặt đơn)
     let activeIndex = steps.findIndex(s => s.key === status);
-    if (status === 'completed') activeIndex = 4;
-    if (status === 'new' || !status) activeIndex = 1;
+    if (activeIndex === -1) activeIndex = 0;
 
-    // Render các Step HTML
     const timeline = document.getElementById('timeline');
-    // Lưu lại các phần tử nền
     const bgHtml = `
         <div class="progress-line"></div>
         <div class="progress-fill" id="progress-line"></div>
@@ -109,9 +137,7 @@ function renderTimeline(status) {
 
     timeline.innerHTML = bgHtml + stepsHtml;
 
-    // Cập nhật chiều dài đường kẻ xanh: 
-    // (Vị trí hiện tại / Tổng số khoảng cách giữa các điểm) * 100%
-    // Trừ đi một chút lề để nó nằm ở giữa icon
+    // Tính toán lại độ rộng vạch kẻ chính xác dựa trên index
     const progressLine = document.getElementById('progress-line');
     const width = (activeIndex / (steps.length - 1)) * 100;
     progressLine.style.width = width + "%";
@@ -120,63 +146,7 @@ function renderTimeline(status) {
 function renderCustomerActions(status, id) {
     const actionsArea = document.getElementById('admin-actions');
 
-    // Logic nút bấm cho khách hàng
-    if (status === 'Chờ xác nhận') {
-        actionsArea.innerHTML = `
-            <button class="btn btn-cancel" onclick="cancelOrder('${id}')">
-                <i class="fa-solid fa-xmark"></i> Hủy đơn hàng
-            </button>
-        `;
-    } else if (status === 'Đang giao') {
-        actionsArea.innerHTML = `
-            <button class="btn btn-confirm" onclick="confirmReceived('${id}')">
-                <i class="fa-solid fa-box-open"></i> Đã nhận được hàng
-            </button>
-        `;
-    } else if (status === 'Đã giao') {
-        actionsArea.innerHTML = `
-            <button class="btn btn-review" onclick="reviewOrder('${id}')">
-                <i class="fa-solid fa-star"></i> Đánh giá sản phẩm
-            </button>
-            <button class="btn btn-buy-again" onclick="buyAgain('${id}')">
-                <i class="fa-solid fa-rotate-right"></i> Mua lại
-            </button>
-        `;
-    }
-}
-
-// 1. Hủy đơn
-async function cancelOrder(id) {
-    if (confirm("Bạn có chắc muốn hủy đơn hàng này?")) {
-        const res = await fetch(`/api/orders/${id}/cancel`, { method: 'POST' });
-        if ((await res.json()).success) {
-            alert("Đã hủy đơn hàng!");
-            location.reload();
-        }
-    }
-}
-
-// 2. Xác nhận đã nhận hàng
-async function confirmReceived(id) {
-    const res = await fetch(`/api/orders/${id}/confirm-received`, { method: 'POST' });
-    if ((await res.json()).success) {
-        alert("Cảm ơn bạn đã xác nhận nhận hàng!");
-        location.reload();
-    }
-}
-
-// 3. Mua lại (Thêm sản phẩm vào giỏ hàng)
-async function buyAgain(id) {
-    try {
-        const res = await fetch(`/api/orders/${id}/reorder`, { method: 'POST' });
-        const result = await res.json();
-        if (result.success) {
-            alert("Đã thêm sản phẩm vào giỏ hàng!");
-            window.location.href = "cart.html";
-        } else {
-            alert("Có lỗi: " + result.message);
-        }
-    } catch (e) {
-        alert("Không thể kết nối đến máy chủ.");
-    }
+    // Xóa sạch các nút, chỉ để trống hoặc ẩn vùng này
+    actionsArea.innerHTML = '';
+    actionsArea.style.display = 'none'; // Ẩn hoàn toàn vùng chứa nút
 }

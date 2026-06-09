@@ -41,7 +41,7 @@ namespace ClothingShop.Data.Repositories
                 .Include(o => o.OrderDetails).ThenInclude(od => od.Variant).ThenInclude(v => v.Product)
                 .Include(o => o.Trackings)
                 .Include(o => o.Payment)
-                .Include(o => o.Customer)
+                .Include(o => o.Customer).ThenInclude(c => c.Addresses)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
 

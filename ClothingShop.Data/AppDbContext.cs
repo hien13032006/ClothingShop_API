@@ -1,5 +1,6 @@
 using ClothingShop.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Reflection.Emit;
 
 namespace ClothingShop.Data
@@ -103,8 +104,10 @@ namespace ClothingShop.Data
                 e.Property(o => o.FinalPrice)
                  .HasColumnName("final_price")
                  .HasColumnType("decimal(18,2)")
-                 .IsRequired(); 
-
+                 .IsRequired();
+                e.Property(o => o.ShippingFee)
+                 .HasColumnName("shipping_fee")
+                 .HasColumnType("decimal(18,2)");
                 e.Property(o => o.ShippingMethod).HasColumnName("shipping_method").HasMaxLength(100);
                 e.Property(o => o.PaymentMethod).HasColumnName("payment_method").HasMaxLength(100);
                 e.Property(o => o.Status).HasColumnName("status").HasMaxLength(50).HasDefaultValue("Chờ xác nhận");

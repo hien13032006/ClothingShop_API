@@ -251,3 +251,15 @@
         outline: none;
         border-color: #ff5722;
     }
+.order-buttons {
+    display: flex;
+    gap: 10px; /* Tạo khoảng cách giữa 2 nút */
+    justify-content: flex-end; /* Căn phải */
+}
+
+/* Đảm bảo nút Trả hàng/Hoàn tiền có màu sắc riêng biệt */
+.btn-sub {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #333;
+}
