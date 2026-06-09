@@ -16,12 +16,14 @@ namespace ClothingShop.Business.Services
     public interface IProductService
     {
         Task<ApiResponse<PagedResult<ProductSummaryDto>>> GetProductsAsync(ProductFilterDto filter, string? userId = null);
+        Task<List<GenderCategoryDto>> GetCategoriesByGenderAsync();
         Task<ApiResponse<ProductDetailDto>> GetProductDetailAsync(int productId, string? userId = null);
         Task<ApiResponse<ProductDetailDto>> CreateProductAsync(CreateProductDto dto);
         Task<ApiResponse<ProductDetailDto>> UpdateProductAsync(int productId, UpdateProductDto dto);
-        Task<ApiResponse<List<ProductSummaryDto>>> GetBestSellersAsync(int limit, string? userId = null);
-        Task<ApiResponse<List<ProductSummaryDto>>> GetNewArrivalsAsync(int limit, string? userId = null);
-        Task<ApiResponse<List<ProductSummaryDto>>> GetDiscountProductsAsync(int limit, string? userId = null);
+        Task<List<ProductSummaryDto>> GetHotProductsAsync(int limit, string? userId = null);
+        Task<List<ProductSummaryDto>> GetNewArrivalsAsync(int limit, string? userId = null);
+        Task<List<ProductSummaryDto>> GetDiscountProductsAsync(int limit, string? userId = null);
+        Task<List<ProductSummaryDto>> GetAllProductsAsync(string? userId = null);
         Task<ApiResponse<string>> DeleteProductAsync(int productId);
         Task<ApiResponse<List<CategoryDto>>> GetCategoriesAsync();
         Task<ApiResponse<CategoryDto>> CreateCategoryAsync(string name, string? description);
@@ -59,9 +61,12 @@ namespace ClothingShop.Business.Services
                 .Include(p => p.Variants)
                 .Include(p => p.Reviews)
                 .AsQueryable();
-
             if (!string.IsNullOrEmpty(filter.Category))
-                query = query.Where(p => p.Category == filter.Category);
+                // Dùng .ToLower() để so sánh không phân biệt hoa thường
+                query = query.Where(p => p.Category.ToLower() == filter.Category.ToLower());
+
+            if (!string.IsNullOrEmpty(filter.Gender))
+                query = query.Where(p => p.Gender.ToLower() == filter.Gender.ToLower());
 
             if (!string.IsNullOrWhiteSpace(filter.Keyword))
             {
@@ -113,6 +118,29 @@ namespace ClothingShop.Business.Services
             });
         }
 
+        public async Task<List<GenderCategoryDto>> GetCategoriesByGenderAsync()
+        {
+            // Lấy danh sách duy nhất từng cặp (Gender, Category) từ DB
+            var query = await _context.Products
+                .Select(p => new { p.Gender, p.Category })
+                .Distinct()
+                .ToListAsync();
+
+            // Nhóm lại để Frontend nhận được dữ liệu phân cấp
+            return query
+                .GroupBy(p => p.Gender)
+                .Select(g => new GenderCategoryDto
+                {
+                    Gender = g.Key ?? "Chưa phân loại",
+                    // Chỉ lấy danh mục thuộc về đúng giới tính đó
+                    Categories = g.Select(x => x.Category)
+                                  .Where(c => !string.IsNullOrEmpty(c))
+                                  .Distinct()
+                                  .ToList()
+                })
+                .ToList();
+        }
+
         // ── Chi tiết sản phẩm ────────────────────────────────────────
         public async Task<ApiResponse<ProductDetailDto>> GetProductDetailAsync(int productId, string? userId = null)
         {
@@ -132,60 +160,66 @@ namespace ClothingShop.Business.Services
             return ApiResponse<ProductDetailDto>.Ok(MapToDetail(product, isInWishlist));
         }
 
-        // ── Trang chủ: Sản phẩm bán chạy nhất ────────────────────────
-        public async Task<ApiResponse<List<ProductSummaryDto>>> GetBestSellersAsync(int limit, string? userId = null)
+        // 1. Sản phẩm mới (<= 3 tháng)
+        public async Task<List<ProductSummaryDto>> GetNewArrivalsAsync(int limit, string? userId = null) // Thêm userId vào đây
         {
-            var products = await _context.Products
-                .Include(p => p.Variants)
-                .Include(p => p.Reviews)
-                .OrderByDescending(p => p.SoldCount)
-                .Take(limit)
-                .ToListAsync();
+            var wishlistIds = await GetUserWishlistIdsAsync(userId); // Lấy danh sách wishlist
+            var threeMonthsAgo = DateTime.UtcNow.AddMonths(-3);
 
-            var wishlistIds = await GetUserWishlistIdsAsync(userId);
-            var result = products.Select(p => MapToSummary(p, wishlistIds)).ToList();
-            return ApiResponse<List<ProductSummaryDto>>.Ok(result);
-        }
-
-        // ── Trang chủ: Sản phẩm mới về ───────────────────────────────
-        public async Task<ApiResponse<List<ProductSummaryDto>>> GetNewArrivalsAsync(int limit, string? userId = null)
-        {
-            var products = await _context.Products
-                .Include(p => p.Variants)
-                .Include(p => p.Reviews)
+            return await _context.Products
+                .Where(p => p.CreatedAt >= threeMonthsAgo)
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(limit)
+                .Select(p => MapToSummary(p, wishlistIds)) // Truyền wishlistIds vào đây
                 .ToListAsync();
-
-            var wishlistIds = await GetUserWishlistIdsAsync(userId);
-            var result = products.Select(p => MapToSummary(p, wishlistIds)).ToList();
-            return ApiResponse<List<ProductSummaryDto>>.Ok(result);
         }
 
-        // ── Trang chủ: Sản phẩm khuyến mãi ───────────────────────────
-        public async Task<ApiResponse<List<ProductSummaryDto>>> GetDiscountProductsAsync(int limit, string? userId = null)
+        // 2. Sản phẩm Hot (soldCount >= 500)
+        public async Task<List<ProductSummaryDto>> GetHotProductsAsync(int limit, string? userId = null)
         {
-            var products = await _context.Products
-                .Include(p => p.Variants)
-                .Include(p => p.Reviews)
+            var wishlistIds = await GetUserWishlistIdsAsync(userId);
+            return await _context.Products
+                .Include(p => p.Reviews) // Cần Include để tính AverageRating
+                .Where(p => p.SoldCount >= 500)
+                .OrderByDescending(p => p.SoldCount)
+                .Take(limit)
+                .Select(p => MapToSummary(p, wishlistIds)) // Truyền wishlistIds
+                .ToListAsync();
+        }
+
+        // 3. Sản phẩm khuyến mãi (Discount != null)
+        public async Task<List<ProductSummaryDto>> GetDiscountProductsAsync(int limit, string? userId = null)
+        {
+            var wishlistIds = await GetUserWishlistIdsAsync(userId);
+            return await _context.Products
+                .Include(p => p.Reviews) // Cần Include để tính AverageRating
                 .Where(p => p.Discount != null && p.Discount > 0)
                 .OrderByDescending(p => p.Discount)
                 .Take(limit)
+                .Select(p => MapToSummary(p, wishlistIds)) // Truyền wishlistIds
                 .ToListAsync();
+        }
 
+        // 4. Tất cả sản phẩm (Có hỗ trợ phân trang nếu cần)
+        public async Task<List<ProductSummaryDto>> GetAllProductsAsync(string? userId = null)
+        {
             var wishlistIds = await GetUserWishlistIdsAsync(userId);
-            var result = products.Select(p => MapToSummary(p, wishlistIds)).ToList();
-            return ApiResponse<List<ProductSummaryDto>>.Ok(result);
+            return await _context.Products
+                .Include(p => p.Reviews)
+                .Select(p => MapToSummary(p, wishlistIds)) // Truyền wishlistIds
+                .ToListAsync();
         }
 
         private async Task<HashSet<int>> GetUserWishlistIdsAsync(string? userId)
         {
             if (string.IsNullOrEmpty(userId)) return new HashSet<int>();
-            var ids = await _context.Wishlist
+
+            return await _context.Wishlist
+                .AsNoTracking()
                 .Where(w => w.UserId == userId)
                 .Select(w => w.ProductId)
-                .ToListAsync();
-            return ids.ToHashSet();
+                .ToListAsync()
+                .ContinueWith(t => t.Result.ToHashSet());
         }
 
         // ── Admin: CRUD sản phẩm ─────────────────────────────────────

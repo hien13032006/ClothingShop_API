@@ -258,6 +258,12 @@ namespace ClothingShop.Models.DTOs
         public string SortBy { get; set; } = "newest";
     }
 
+    public class GenderCategoryDto
+    {
+        public string Gender { get; set; } = string.Empty;
+        public List<string> Categories { get; set; } = new List<string>();
+    }
+
     // ═══════════════════════════════════════════════════════
     // REVIEW
     // ═══════════════════════════════════════════════════════

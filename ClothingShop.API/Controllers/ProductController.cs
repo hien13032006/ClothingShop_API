@@ -46,6 +46,13 @@ namespace ClothingShop.API.Controllers
             return r.Success ? Ok(r) : NotFound(r);
         }
 
+        [HttpGet("categories-by-gender")]
+        public async Task<IActionResult> GetCategoriesByGender()
+        {
+            var result = await _productService.GetCategoriesByGenderAsync();
+            return Ok(result); // Trả về JSON cho Frontend
+        }
+
         /// <summary>GET /api/product/categories</summary>
         [HttpGet("categories")]
         public async Task<IActionResult> GetCategories()
@@ -60,7 +67,7 @@ namespace ClothingShop.API.Controllers
         /// </summary>
         [HttpGet("best-sellers")]
         public async Task<IActionResult> GetBestSellers([FromQuery] int limit = 4)
-            => Ok(await _productService.GetBestSellersAsync(limit, GetUserId()));
+            => Ok(await _productService.GetHotProductsAsync(limit, GetUserId()));
 
         [HttpGet("new-arrivals")]
         public async Task<IActionResult> GetNewArrivals([FromQuery] int limit = 5)

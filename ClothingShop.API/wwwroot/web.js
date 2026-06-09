@@ -20,6 +20,14 @@ const validatePrice = (obj, key1, key2) => {
     return isNaN(num) ? 0 : num;
 };
 
+function extractArray(res) {
+    if (!res) return [];
+    // Kiểm tra các định dạng API trả về phổ biến
+    const data = res.data || res.Data || res.items || res.Items || res;
+    return Array.isArray(data) ? data : [];
+}
+
+
 // ── 1. HÀM FETCH DATA CHUẨN HÓA CHO C# CONTROLLER ──────────────────────────
 async function fetchData(endpoint) {
     try {
@@ -332,72 +340,67 @@ async function moveMoiShowcase(direction) {
 async function initProductPages() {
     renderVouchers(mockVouchers);
 
-    const gridContainer = document.getElementById('main-product-grid');
-    if (!gridContainer) return;
-
     const params = new URLSearchParams(window.location.search);
-    const type = params.get('type');
-    const cat = params.get('cat');
+    const type = params.get('type'); // 'moi', 'banchay', 'khuyenmai'
+    const cat = params.get('cat');   // Tên danh mục
 
-    const isNewPage = (type === 'moi');
+    const gridContainer = document.getElementById('main-product-grid');
     const showcaseSection = document.querySelector('.SANPHAMMOI');
     const titleElement = document.getElementById('category-title');
-    const hrTag = titleElement ? titleElement.nextElementSibling : null;
 
-    if (isNewPage) {
-        if (showcaseSection) {
-            showcaseSection.style.display = 'block';
+    // 1. Logic xử lý cho trang "Sản phẩm mới" (Showcase)
+    if (type === 'moi') {
+        toggleDisplay(showcaseSection, 'block');
+        toggleDisplay(gridContainer, 'none');
+        toggleDisplay(titleElement, 'none');
 
-            if (!newProductsList || newProductsList.length === 0) {
-                const newArrivalsData = await fetchData("product/new-arrivals?limit=5");
-                if (newArrivalsData) {
-                    newProductsList = newArrivalsData.items || newArrivalsData.Items || (Array.isArray(newArrivalsData) ? newArrivalsData : []);
-                }
-            }
-
-            if (newProductsList && newProductsList.length > 0) {
-                renderProductShowcase('showcase-container', newProductsList[currentMoiIndex]);
-            } else {
-                const showcase = document.getElementById('showcase-container');
-                if (showcase) showcase.innerHTML = "<p style='padding:20px;'>Chưa có sản phẩm mới cập nhật.</p>";
-            }
-        }
-        if (gridContainer) gridContainer.style.display = 'none';
-        if (titleElement) titleElement.style.display = 'none';
-        if (hrTag && hrTag.tagName === 'HR') hrTag.style.display = 'none';
-    } else {
-        if (showcaseSection) showcaseSection.style.display = 'none';
-        if (gridContainer) gridContainer.style.display = 'grid';
-        if (titleElement) titleElement.style.display = 'block';
-        if (hrTag && hrTag.tagName === 'HR') hrTag.style.display = 'block';
-
-        let filtered = [...products];
-
-        if (type === 'banchay') {
-            filtered.sort((a, b) => {
-                const soldA = Number(a.soldCount !== undefined ? a.soldCount : (a.SoldCount || 0));
-                const soldB = Number(b.soldCount !== undefined ? b.soldCount : (b.SoldCount || 0));
-                return soldB - soldA;
-            });
-            if (titleElement) titleElement.innerText = "Sản phẩm bán chạy";
-        } else if (type === 'khuyenmai') {
-            filtered = filtered.filter(p => {
-                const disc = validatePrice(p, 'discount', 'Discount');
-                return disc > 0;
-            });
-            if (titleElement) titleElement.innerText = "Sản phẩm khuyến mãi";
-        } else if (cat) {
-            filtered = filtered.filter(p => {
-                const cName = p.category || p.Category;
-                return cName === cat;
-            });
-            if (titleElement) titleElement.innerText = `Danh mục: ${cat}`;
-        } else {
-            if (titleElement) titleElement.innerText = "Tất cả sản phẩm";
-        }
-
-        renderProducts('main-product-grid', filtered);
+        const data = await fetchData("product/new-arrivals?limit=20");
+        const list = extractArray(data);
+        renderProductShowcase('showcase-container', list[0]);
+        return; // Dừng lại vì đã xử lý xong trang showcase
     }
+
+    // 2. Logic xử lý cho trang danh sách sản phẩm (Grid)
+    toggleDisplay(showcaseSection, 'none');
+    toggleDisplay(gridContainer, 'grid');
+    toggleDisplay(titleElement, 'block');
+
+    let endpoint = "product?";
+    const paramsArray = [];
+
+    if (type === 'banchay') {
+        endpoint = "product/best-sellers?limit=20";
+        title = "Sản phẩm bán chạy";
+    } else if (type === 'khuyenmai') {
+        endpoint = "product/discounts?limit=20";
+        title = "Sản phẩm khuyến mãi";
+    } else {
+        if (cat) paramsArray.push(`cat=${encodeURIComponent(cat)}`);
+        const gender = params.get('gender');
+        if (gender) paramsArray.push(`gender=${encodeURIComponent(gender)}`);
+
+        endpoint = paramsArray.length > 0 ? `product?${paramsArray.join('&')}` : "product";
+
+        // Cập nhật title thông minh hơn
+        if (cat && gender) title = `Danh mục: ${cat} (${gender})`;
+        else if (cat) title = `Danh mục: ${cat}`;
+        else if (gender) title = `Sản phẩm dành cho: ${gender}`;
+        else title = "Tất cả sản phẩm";
+    }
+
+    if (titleElement) titleElement.innerText = title;
+
+    // Gọi API lấy dữ liệu đã lọc sẵn từ Backend
+    const data = await fetchData(endpoint);
+    renderProducts('main-product-grid', extractArray(data));
+}
+
+
+// Hàm bổ trợ giúp code gọn hơn
+function toggleDisplay(element, displayValue) {
+    if (element) element.style.display = displayValue;
+    const hr = element?.nextElementSibling;
+    if (hr && hr.tagName === 'HR') hr.style.display = displayValue;
 }
 
 //==========================================
