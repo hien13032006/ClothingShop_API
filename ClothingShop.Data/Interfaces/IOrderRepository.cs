@@ -1,6 +1,7 @@
-using System.Threading.Tasks;
 using ClothingShop.Models;
+using ClothingShop.Models.DTOs;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ClothingShop.Data.Interfaces
 {
@@ -12,5 +13,6 @@ namespace ClothingShop.Data.Interfaces
         Task<List<Order>> GetByCustomerAsync(string userId);
         Task UpdateAsync(Order order);
         Task SaveChangesAsync();
+        
     }
 }

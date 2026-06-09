@@ -10,8 +10,10 @@ namespace ClothingShop.Business.Services
     {
         Task<ApiResponse<OrderDto>> CreateOrderAsync(string userId, CreateOrderDto dto);
         Task<ApiResponse<OrderDto>> GetOrderDetailAsync(string orderId, string userId);
-        Task<ApiResponse<List<OrderDto>>> GetMyOrdersAsync(string userId);
+        Task<ApiResponse<List<OrderDto>>> GetMyOrdersAsync(string userId, string status);
         Task<ApiResponse<string>> CancelOrderAsync(string orderId, string userId);
+        Task<ApiResponse<string>> ConfirmReceivedAsync(string orderId, string userId);
+        Task<ApiResponse<string>> AddReviewAsync(string orderId, string userId, ReviewDto dto);
         Task<ApiResponse<PagedResult<OrderDto>>> GetAllOrdersAsync(OrderFilterDto filter);
         Task<ApiResponse<OrderDto>> UpdateOrderStatusAsync(string orderId, UpdateOrderStatusDto dto);
         Task<ApiResponse<OrderCalculationDto>> CalculateOrderAsync(List<CartItemDto> items, string? promoCode = null);
@@ -211,9 +213,38 @@ namespace ClothingShop.Business.Services
             return ApiResponse<OrderDto>.Ok(dto);
         }
 
-        public async Task<ApiResponse<List<OrderDto>>> GetMyOrdersAsync(string userId)
+        private string MapStatus(string status)
         {
+            var map = new Dictionary<string, string> {
+                { "pending", "Chờ xác nhận" },
+                { "shipping", "Đang giao" },
+                { "completed", "Hoàn thành" },
+                { "cancelled", "Đã hủy" }
+            };
+             return map.ContainsKey(status) ? map[status] : status;
+        }
+
+        public async Task<ApiResponse<List<OrderDto>>> GetMyOrdersAsync(string userId, string status)
+        {
+            // 1. Lấy tất cả đơn hàng của User từ Repo
             var orders = await _orderRepo.GetByCustomerAsync(userId);
+
+            // 2. Chỉ lọc khi status khác "all"
+            if (!string.IsNullOrEmpty(status) && status.ToLower() != "all")
+            {
+                // Chuyển đổi status từ frontend (ví dụ: 'pending') sang status trong DB (ví dụ: 'Chờ xác nhận')
+                var dbStatus = MapStatus(status);
+
+                foreach (var o in orders)
+                {
+                    Console.WriteLine($"Status trong DB: {o.Status}");
+                }
+
+                // Lọc danh sách dựa trên trạng thái đã map
+                orders = orders.Where(o => o.Status == dbStatus).ToList();
+            }
+
+            // 3. Map sang DTO và trả về
             return ApiResponse<List<OrderDto>>.Ok(orders.Select(MapToDto).ToList());
         }
 
@@ -225,17 +256,27 @@ namespace ClothingShop.Business.Services
             if (!new[] { "Chờ xác nhận", "Đang chuẩn bị" }.Contains(order.Status))
                 return ApiResponse<string>.Fail($"Không thể hủy khi đơn đang ở trạng thái '{order.Status}'");
 
-            order.Status = "Hủy";
+            // 1. Cập nhật trạng thái đơn hàng
+            order.Status = "Đã hủy";
+            _orderRepo.Update(order); // Hoặc _context.Orders.Update(order);
+
+            // 2. Cập nhật kho và lượt bán
             foreach (var d in order.OrderDetails)
             {
+                // Gọi repo để cập nhật kho
                 await _productRepo.UpdateStockAsync(d.VariantId, d.Quantity);
+
+                // Cập nhật lượt bán
                 var v = await _context.ProductVariants.Include(x => x.Product)
                     .FirstOrDefaultAsync(x => x.VariantId == d.VariantId);
                 if (v?.Product != null)
+                {
                     v.Product.SoldCount = Math.Max(0, v.Product.SoldCount - d.Quantity);
+                    // Không cần _context.Products.Update vì EF đang theo dõi (tracking) thực thể này
+                }
             }
 
-            // Hoàn điểm
+            // 3. Hoàn điểm (đoạn code cũ của bạn)
             var pointRecord = await _context.PointHistories
                 .FirstOrDefaultAsync(p => p.UserId == userId && p.OrderId == orderId && p.Points > 0);
             if (pointRecord != null)
@@ -257,6 +298,20 @@ namespace ClothingShop.Business.Services
                 }
             }
 
+            string notifBody = $"Đơn #{orderId} đã hủy thành công.";
+            if (order.PaymentMethod == "Thanh toán online" )
+            {
+                notifBody += " Bạn sẽ được hoàn tiền sớm trong 3-5 ngày làm việc.";
+            }
+
+            await _notifService.CreateAsync(userId, "order_update", "Đơn hàng đã hủy", notifBody, orderId);
+
+            return ApiResponse<string>.Ok("OK", "Hủy đơn hàng thành công");
+
+            // QUAN TRỌNG: LƯU TẤT CẢ THAY ĐỔI VÀO DATABASE
+            await _context.SaveChangesAsync();
+
+            // 4. Các hành động phụ (Tracking, Notif)
             await _orderRepo.AddTrackingAsync(new OrderTracking
             {
                 OrderId = orderId,
@@ -264,13 +319,64 @@ namespace ClothingShop.Business.Services
                 UpdatedAt = DateTime.Now
             });
 
+            await _notifService.CreateAsync(userId, "order_update", "Đơn hàng đã hủy", $"Đơn #{orderId} đã hủy thành công.", orderId);
+
+            return ApiResponse<string>.Ok("OK", "Hủy đơn hàng thành công");
+        }
+
+        // --- XÁC NHẬN ĐÃ NHẬN HÀNG ---
+        public async Task<ApiResponse<string>> ConfirmReceivedAsync(string orderId, string userId)
+        {
+            var order = await _orderRepo.GetWithDetailsAsync(orderId);
+            if (order == null || order.UserId != userId)
+                return ApiResponse<string>.Fail("Đơn hàng không tồn tại hoặc không thuộc quyền sở hữu");
+
+            if (order.Status != "Đang giao")
+                return ApiResponse<string>.Fail("Đơn hàng phải đang ở trạng thái 'Đang giao' mới có thể xác nhận");
+
+            order.Status = "Hoàn thành";
+            // Nếu thanh toán COD, tự động cập nhật là đã thanh toán khi khách nhận hàng
+            if (order.Payment != null) order.Payment.PaymentStatus = "Đã thanh toán";
+
+            await _orderRepo.AddTrackingAsync(new OrderTracking
+            {
+                OrderId = orderId,
+                StatusUpdate = "Khách hàng đã xác nhận nhận hàng",
+                UpdatedAt = DateTime.Now
+            });
+
             await _orderRepo.UpdateAsync(order);
             await _orderRepo.SaveChangesAsync();
 
-            await _notifService.CreateAsync(userId, "order_update",
-                "Đơn hàng đã hủy", $"Đơn #{orderId} đã hủy thành công.", orderId);
+            return ApiResponse<string>.Ok("Đơn hàng đã được chuyển sang Hoàn thành");
+        }
 
-            return ApiResponse<string>.Ok("OK", "Hủy đơn hàng thành công");
+        // --- THÊM ĐÁNH GIÁ ---
+        public async Task<ApiResponse<string>> AddReviewAsync(string orderId, string userId, ReviewDto dto)
+        {
+            var order = await _context.Orders.Include(o => o.OrderDetails).FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
+            if (order == null || order.Status != "Hoàn thành")
+                return ApiResponse<string>.Fail("Chỉ có thể đánh giá đơn hàng đã Hoàn thành");
+
+            foreach (var detail in order.OrderDetails)
+            {
+                var variant = await _context.ProductVariants.FindAsync(detail.VariantId);
+                if (variant == null) continue;
+
+                var review = new ProductReview
+                {
+                    UserId = userId,
+                    ProductId = variant.ProductId,
+                    OrderId = orderId,
+                    Rating = dto.Rating,
+                    Comment = dto.Comment,
+                    CreatedAt = DateTime.Now
+                };
+                await _context.ProductReviews.AddAsync(review);
+            }
+
+            await _context.SaveChangesAsync();
+            return ApiResponse<string>.Ok("Đánh giá của bạn đã được ghi nhận");
         }
 
         public async Task<ApiResponse<PagedResult<OrderDto>>> GetAllOrdersAsync(OrderFilterDto filter)
@@ -430,6 +536,7 @@ namespace ClothingShop.Business.Services
             ShippingMethod = o.ShippingMethod,
             PaymentMethod = o.PaymentMethod,
             Status = o.Status,
+            HasReviewed = o.HasReviewed,
             Payment = o.Payment == null ? null : new PaymentInfoDto
             {
                 PaymentMethod = o.Payment.PaymentMethod,
@@ -441,10 +548,12 @@ namespace ClothingShop.Business.Services
             {
                 OrderDetailId = od.OrderDetailId,
                 VariantId = od.VariantId,
+                ProductId = od.Variant?.ProductId ?? 0,
                 ProductName = od.Variant?.Product?.Name,
                 Color = od.Variant?.Color,
                 Size = od.Variant?.Size,
                 Quantity = od.Quantity,
+                ImageUrl = od.Variant?.Product?.MainImage ?? "default.jpg",
                 UnitPrice = od.UnitPrice,
                 LineTotal = od.LineTotal,
                 CanReview = false

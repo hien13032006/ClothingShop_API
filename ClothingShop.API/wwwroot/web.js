@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 //=======================================
-// ── 3. KHỞI TẠO DỮ LIỆU CHO TRANG CHỦ ─────────────────────────────────────
+// ── 3. KHỞI TẠO DỮ LIỆU CHO TRANG CHỦ 
 //=======================================
 async function initHomePage() {
     if (mockVouchers && mockVouchers.length > 0) {
@@ -105,7 +105,6 @@ async function initHomePage() {
     if (cleanNewArrivals.length > 0) {
         newProductsList = cleanNewArrivals;
 
-        // 💡 GIẢI PHÁP: Gọi API chi tiết của sản phẩm đầu tiên để lấy đầy đủ Description từ DB
         const firstProductId = newProductsList[currentMoiIndex].productId || newProductsList[currentMoiIndex].id || newProductsList[currentMoiIndex].Id;
 
         fetchData(`product/${firstProductId}`).then(fullProductData => {

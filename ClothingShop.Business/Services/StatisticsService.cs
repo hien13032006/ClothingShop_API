@@ -48,22 +48,27 @@ namespace ClothingShop.Business.Services
                 .Select(g => new OrderStatusCountDto { Status = g.Key, Count = g.Count() })
                 .ToListAsync();
 
+            var orderStats = await _context.Orders
+                .GroupBy(o => 1)
+                .Select(g => new {
+                    TotalOrders = g.Count(),
+                    PendingOrders = g.Count(x => x.Status == "Chờ xác nhận"),
+                    TotalRevenue = g.Where(x => x.Status == "Hoàn thành").Sum(x => (decimal?)x.FinalPrice) ?? 0
+                })
+                .FirstOrDefaultAsync() ?? new { TotalOrders = 0, PendingOrders = 0, TotalRevenue = 0m };
+            var totalCustomers = await _context.Customers.CountAsync(c => !c.UserId.StartsWith("AD"));
             var now = DateTime.Now;
             return ApiResponse<DashboardDto>.Ok(new DashboardDto
             {
-                TotalCustomers  = await _context.Customers.CountAsync(c => !c.UserId.StartsWith("AD")),
-                TotalOrders     = await _context.Orders.CountAsync(),
-                PendingOrders   = await _context.Orders.CountAsync(o => o.Status == "Chờ xác nhận"),
-                TotalRevenue    = await _context.Orders
-                    .Where(o => o.Status == "Hoàn thành")
-                    .SumAsync(o => (decimal?)o.FinalPrice) ?? 0,
+                TotalCustomers = totalCustomers,
+                TotalOrders = orderStats.TotalOrders,
+                PendingOrders = orderStats.PendingOrders,
+                TotalRevenue = orderStats.TotalRevenue,
                 RevenueThisMonth = await _context.Orders
-                    .Where(o => o.Status == "Hoàn thành" &&
-                                o.OrderDate.Month == now.Month &&
-                                o.OrderDate.Year  == now.Year)
-                    .SumAsync(o => (decimal?)o.FinalPrice) ?? 0,
-                TopProducts          = topProducts,
-                RevenueByMonth       = revenueByMonth,
+            .Where(o => o.Status == "Hoàn thành" && o.OrderDate.Month == now.Month && o.OrderDate.Year == now.Year)
+            .SumAsync(o => (decimal?)o.FinalPrice) ?? 0,
+                TopProducts = topProducts,
+                RevenueByMonth = revenueByMonth,
                 OrderStatusBreakdown = statusBreakdown
             });
         }
@@ -73,35 +78,38 @@ namespace ClothingShop.Business.Services
             if (from > to)
                 return ApiResponse<RevenueReportDto>.Fail("Ngày bắt đầu phải nhỏ hơn ngày kết thúc");
 
-            var orders = await _context.Orders
+            // 1. Lấy dữ liệu đã GroupBy từ Database thay vì lấy hết về RAM
+            var byDay = await _context.Orders
                 .Where(o => o.Status == "Hoàn thành" && o.OrderDate >= from && o.OrderDate <= to)
-                .ToListAsync();
-
-            var byDay = orders
                 .GroupBy(o => o.OrderDate.Date)
                 .Select(g => new RevenueByDayDto
                 {
-                    Date       = g.Key,
-                    Revenue    = g.Sum(o => o.FinalPrice),
+                    Date = g.Key,
+                    Revenue = g.Sum(o => o.FinalPrice),
                     OrderCount = g.Count()
                 })
                 .OrderBy(x => x.Date)
-                .ToList();
+                .ToListAsync();
 
+            // 2. Tính toán tổng hợp từ kết quả của byDay để tránh truy vấn lại bảng Orders nhiều lần
+            var totalRevenue = byDay.Sum(x => x.Revenue);
+            var totalOrders = byDay.Sum(x => x.OrderCount);
+
+            // 3. Truy vấn chỉ số lượng sản phẩm từ OrderDetails
             var totalSold = await _context.OrderDetails
                 .Where(od => od.Order!.Status == "Hoàn thành" &&
                              od.Order.OrderDate >= from &&
                              od.Order.OrderDate <= to)
-                .SumAsync(od => od.Quantity);
+                .SumAsync(od => (int?)od.Quantity) ?? 0;
 
             return ApiResponse<RevenueReportDto>.Ok(new RevenueReportDto
             {
-                FromDate          = from,
-                ToDate            = to,
-                TotalRevenue      = orders.Sum(o => o.FinalPrice),
-                TotalOrders       = orders.Count,
+                FromDate = from,
+                ToDate = to,
+                TotalRevenue = totalRevenue,
+                TotalOrders = totalOrders,
                 TotalProductsSold = totalSold,
-                ByDay             = byDay
+                ByDay = byDay
             });
         }
     }

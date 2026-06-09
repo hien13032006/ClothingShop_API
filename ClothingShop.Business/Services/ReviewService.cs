@@ -28,8 +28,8 @@ namespace ClothingShop.Business.Services
         {
             // 1. Kiểm tra đơn hàng hợp lệ
             var order = await _context.Orders
-                .Include(o => o.OrderDetails).ThenInclude(od => od.Variant)
-                .FirstOrDefaultAsync(o => o.OrderId == dto.OrderId && o.UserId == userId);
+        .Include(o => o.OrderDetails).ThenInclude(od => od.Variant)
+        .FirstOrDefaultAsync(o => o.OrderId == dto.OrderId && o.UserId == userId);
 
             if (order == null)
                 return ApiResponse<ReviewDto>.Fail("Không tìm thấy đơn hàng hoặc đơn hàng không thuộc về bạn");
@@ -37,8 +37,10 @@ namespace ClothingShop.Business.Services
             if (order.Status != "Hoàn thành")
                 return ApiResponse<ReviewDto>.Fail("Chỉ được đánh giá sau khi đơn hàng hoàn thành");
 
-            bool hasBought = order.OrderDetails.Any(od => od.Variant?.ProductId == productId);
-            if (!hasBought)
+            // TỐI ƯU: Chỉ cần kiểm tra bằng cách tìm trực tiếp trong đơn hàng
+            var orderDetail = order.OrderDetails.FirstOrDefault(od => od.Variant?.ProductId == productId);
+
+            if (orderDetail == null)
                 return ApiResponse<ReviewDto>.Fail("Bạn chưa mua sản phẩm này trong đơn hàng đó");
 
             // 2. Kiểm tra đã review chưa
@@ -64,6 +66,9 @@ namespace ClothingShop.Business.Services
 
             await _reviewRepo.AddAsync(review);
             await _reviewRepo.SaveChangesAsync();
+
+            order.HasReviewed = true;
+            await _context.SaveChangesAsync();
 
             return ApiResponse<ReviewDto>.Ok(new ReviewDto
             {

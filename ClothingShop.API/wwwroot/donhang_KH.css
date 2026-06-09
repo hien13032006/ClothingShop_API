@@ -41,8 +41,12 @@
     margin-bottom: 12px;
     padding: 20px;
     border-radius: 3px;
+    cursor: pointer;
     box-shadow: 0 1px 1px rgba(0,0,0,0.05);
 }
+    .order-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
 
 .order-card-header {
     display: flex;
@@ -157,3 +161,93 @@
 .btn-sub:hover {
     background-color: #f8f8f8;
 }
+
+.btn-disabled {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed;
+    border: 1px solid #bbbbbb;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Độ mờ nền */
+    /* CĂN GIỮA NỘI DUNG */
+    display: flex; /* Kích hoạt Flexbox */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    justify-content: center; /* Căn giữa theo chiều ngang */
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 25px;
+    width: 90%;
+    max-width: 450px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+    /* Tiêu đề Modal */
+    .modal-content h3 {
+        margin: 0 0 15px 0;
+        font-size: 1.2rem;
+        color: #333;
+    }
+.modal-footer {
+    display: flex;
+    justify-content: flex-end; /* Nút nằm bên phải */
+    margin-top: 15px;
+}
+
+.close-btn {
+    float: right;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+/* Tên sản phẩm trong Modal */
+.product-name-in-modal {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+/* Dãy sao - Tăng khoảng cách và kích thước */
+.star-rating {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 20px 0;
+}
+
+    .star-rating i {
+        font-size: 32px;
+        color: #ddd;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+
+        .star-rating i:hover {
+            transform: scale(1.1);
+        }
+
+/* Textarea - Bo góc và đẹp hơn */
+.review-content {
+    width: 100%;
+    height: 100px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    resize: none;
+    font-family: inherit;
+}
+
+    .review-content:focus {
+        outline: none;
+        border-color: #ff5722;
+    }

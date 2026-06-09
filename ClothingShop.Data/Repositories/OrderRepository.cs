@@ -47,7 +47,15 @@ namespace ClothingShop.Data.Repositories
 
         public async Task<List<Order>> GetByCustomerAsync(string userId)
         {
-            return await _context.Orders.Where(o => o.UserId == userId).ToListAsync();
+            return await _context.Orders
+                .Include(o => o.OrderDetails)           // Nạp chi tiết đơn hàng
+                    .ThenInclude(od => od.Variant)      // Nạp biến thể (Màu, Size)
+                        .ThenInclude(v => v.Product)    // Nạp thông tin sản phẩm
+                .Include(o => o.Trackings)              // Nạp thông tin vận chuyển
+                .Include(o => o.Payment)                // Nạp thông tin thanh toán
+                .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.OrderDate)    // Nên có thêm sắp xếp để đơn mới nhất hiện lên trên
+                .ToListAsync();
         }
     }
 }

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Danh sách đơn hàng</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="donhang_KH.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -53,14 +54,6 @@
                     </ul>
                 </li>
             </ul>
-
-            <div class="search-box-container">
-                <div class="search-box">
-                    <input type="text" placeholder="Tìm kiếm sản phẩm...">
-                    <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-                </div>
-            </div>
-
         </div>
         <div class="nav-right-section">
             <div class="nav-icons">
@@ -94,6 +87,21 @@
         </div>
 
         <div id="order-render-container" class="order-list">
+        </div>
+    </div>
+
+    <div id="reviewModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeReviewModal()">&times;</span>
+            <h3>Đánh giá sản phẩm</h3>
+            <input type="hidden" id="modalOrderId">
+
+            <div id="reviewProductList">
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-main" onclick="submitReview()">Gửi đánh giá</button>
+            </div>
         </div>
     </div>
 

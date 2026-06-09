@@ -15,6 +15,7 @@ namespace ClothingShop.Business.Services
         Task<ApiResponse<CartSummaryDto>> UpdateQuantityAsync(string userId, UpdateCartDto dto);
         Task<ApiResponse<string>> RemoveItemAsync(string userId, int cartId);
         Task<ApiResponse<string>> ClearCartAsync(string userId);
+        Task<ApiResponse<CartSummaryDto>> AddItemToCartAsync(string userId, CartItemDto item);
     }
 
     public class CartService : ICartService
@@ -171,6 +172,19 @@ namespace ClothingShop.Business.Services
                 TotalAmount = list.Sum(i => i.Subtotal),
                 TotalItems = list.Sum(i => i.Quantity)
             };
+        }
+
+        public async Task<ApiResponse<CartSummaryDto>> AddItemToCartAsync(string userId, CartItemDto item)
+        {
+            // Chuyển đổi DTO để dùng lại hàm AddToCartAsync đã có sẵn
+            var dto = new AddToCartDto
+            {
+                VariantId = item.VariantId,
+                Quantity = item.Quantity
+            };
+
+            // Gọi lại hàm có sẵn để đảm bảo logic kiểm tra tồn kho và cộng dồn được thực thi nhất quán
+            return await AddToCartAsync(userId, dto);
         }
     }
 }

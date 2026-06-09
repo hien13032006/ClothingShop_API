@@ -221,7 +221,7 @@ async function placeOrder() {
             alert("Đặt hàng thành công!");
             localStorage.removeItem('checkout_voucher');
             localStorage.removeItem('checkout_data');
-            window.location.href = "order-history.html";
+            window.location.href = `Chitietdonhang_KH.html?id=${orderId}`;
         } else {
             // Xử lý lỗi trả về từ API (ví dụ: lỗi 400 Bad Request)
             alert("Lỗi đặt hàng: " + (result.message || "Đã có lỗi xảy ra"));

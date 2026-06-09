@@ -37,6 +37,19 @@ namespace ClothingShop.API.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        /// <summary>POST /api/cart/add-bulk</summary>
+        [HttpPost("add-bulk")]
+        public async Task<IActionResult> AddBulkToCart([FromBody] List<AddToCartDto> items)
+        {
+            var userId = GetUserId();
+            foreach (var item in items)
+            {
+                // Gọi lại logic AddToCartAsync đã có sẵn trong Service
+                await _cartService.AddToCartAsync(userId, item);
+            }
+            return Ok(new { success = true, message = "Đã thêm toàn bộ sản phẩm vào giỏ hàng" });
+        }
+
         /// <summary>PUT /api/cart/update</summary>
         [HttpPut("update")] 
         public async Task<IActionResult> UpdateQuantity([FromBody] UpdateCartDto dto)

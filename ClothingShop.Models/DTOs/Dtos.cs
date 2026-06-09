@@ -369,6 +369,7 @@ namespace ClothingShop.Models.DTOs
         public string? ShippingMethod { get; set; }
         public string? PaymentMethod { get; set; }
         public string Status { get; set; } = string.Empty;
+        public bool HasReviewed { get; set; }
         public PaymentInfoDto? Payment { get; set; }
         public List<OrderDetailDto> Details { get; set; } = new();
         public List<TrackingDto> Trackings { get; set; } = new();
@@ -386,10 +387,12 @@ namespace ClothingShop.Models.DTOs
     {
         public int OrderDetailId { get; set; }
         public int VariantId { get; set; }
+        public int ProductId { get; set; }
         public string? ProductName { get; set; }
         public string? Color { get; set; }
         public string? Size { get; set; }
         public int Quantity { get; set; }
+        public string? ImageUrl { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal LineTotal { get; set; }
         public bool CanReview { get; set; }
